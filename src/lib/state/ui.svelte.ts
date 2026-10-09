@@ -4,6 +4,15 @@
 import { MediaQuery } from 'svelte/reactivity';
 import type { SeedState } from '$lib/domain/types';
 
+const toastTimers = new WeakMap<Ui, ReturnType<typeof setTimeout>>();
+const toastIds = new WeakMap<Ui, number>();
+
+function applyTheme(theme: Theme): void {
+	if (typeof document === 'undefined') return;
+	document.documentElement.dataset.theme = theme;
+	document.documentElement.style.colorScheme = theme;
+}
+
 export type Theme = 'light' | 'dark';
 
 /**
@@ -100,33 +109,68 @@ export class Ui {
 	 * `${OVERLAY_LABEL[id]} arrives in a later build phase.` and do not open anything.
 	 */
 	open = (id: OverlayId): void => {
-		void id;
+		if (!AVAILABLE_OVERLAYS.has(id)) {
+			this.showToast(`${OVERLAY_LABEL[id]} arrives in a later build phase.`);
+			return;
+		}
+		this.overlays = [...this.overlays.filter((overlay) => overlay !== id), id];
 	};
 
 	close = (id: OverlayId): void => {
-		void id;
+		this.overlays = this.overlays.filter((overlay) => overlay !== id);
 	};
 
 	toggle = (id: OverlayId): void => {
-		void id;
+		if (this.isOpen(id)) this.close(id);
+		else this.open(id);
 	};
 
 	/** Close the topmost overlay. Returns false when none was open. */
-	closeTop = (): boolean => false;
+	closeTop = (): boolean => {
+		const top = this.top;
+		if (!top) return false;
+		this.close(top);
+		return true;
+	};
 
 	/** Show a toast; replaces any current toast. Auto-dismiss: 2800ms, or 6000ms with an action. */
 	showToast = (message: string, action?: ToastAction): void => {
-		void message;
-		void action;
+		const id = (toastIds.get(this) ?? 0) + 1;
+		toastIds.set(this, id);
+		this.dismissToast();
+		this.toast = { id, message, ...(action ? { action } : {}) };
+		const timer = setTimeout(() => {
+			if (this.toast?.id === id) this.toast = null;
+			toastTimers.delete(this);
+		}, action ? 6000 : 2800);
+		toastTimers.set(this, timer);
 	};
 
-	dismissToast = (): void => {};
+	dismissToast = (): void => {
+		const timer = toastTimers.get(this);
+		if (timer !== undefined) clearTimeout(timer);
+		toastTimers.delete(this);
+		this.toast = null;
+	};
 
 	/** Read the saved theme (localStorage 'seedkeep-theme', guarded) or prefers-color-scheme, and apply it. Call once from the root layout's onMount. */
-	initTheme = (): void => {};
+	initTheme = (): void => {
+		let theme: Theme | null = null;
+		try {
+			const stored = localStorage.getItem('seedkeep-theme');
+			if (stored === 'light' || stored === 'dark') theme = stored;
+		} catch { /* Storage may be disabled. */ }
+		if (!theme) theme = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		this.theme = theme;
+		applyTheme(theme);
+	};
 
 	/** Flip, apply to <html data-theme> and color-scheme, and persist (guarded). */
-	toggleTheme = (): void => {};
+	toggleTheme = (): void => {
+		this.theme = this.theme === 'dark' ? 'light' : 'dark';
+		applyTheme(this.theme);
+		try { localStorage.setItem('seedkeep-theme', this.theme); } catch { /* Storage may be disabled. */ }
+	};
 }
 
 export const ui = new Ui();

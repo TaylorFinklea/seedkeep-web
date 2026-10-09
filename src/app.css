@@ -1,1 +1,141 @@
-/* CONTRACT STUB — owner: Haiku (Phase 1). Workbench tokens (light + [data-theme="dark"]) and base styles. */
+/* Workbench tokens (light on :root, dark on [data-theme="dark"]) and base styles.
+   Values come from the design export: light from line 16, dark from the DARK object (line 405).
+   Components must use these tokens only, never hard-coded theme colours. */
+
+:root {
+	color-scheme: light;
+
+	--bg: #f5f5f1;
+	--panel: #ffffff;
+	--panel2: #fafaf7;
+	--ink: #17201b;
+	--muted: #56605a;
+	--faint: #7c857f;
+	--line: #e2e3dd;
+	--line2: #cdd0c8;
+	--accent: #07583b;
+	--accentInk: #ffffff;
+	--accentSoft: #e3efe8;
+	--sel: #eef5f0;
+	--warn: #a8461a;
+	--warnSoft: #fbeee6;
+	--palSel: #eef5f0;
+	--v-plant_now: #1d7a45;
+	--v-plant_soon: #a66a0e;
+	--v-late: #b5501a;
+	--v-too_early: #3f6688;
+	--v-too_late: #858c87;
+	--k-sowing: #e3efe8;
+	--k-transplant: #e3ebf4;
+	--k-harvest: #f6ecd6;
+	--k-note: #ecece8;
+
+	--sans: 'Public Sans', system-ui, sans-serif;
+	--mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+
+	--bg: #0f1311;
+	--panel: #161b18;
+	--panel2: #1b211e;
+	--ink: #e6ebe7;
+	--muted: #a2aca5;
+	--faint: #828c86;
+	--line: #262d29;
+	--line2: #363e39;
+	--accent: #4cc688;
+	--accentInk: #07150e;
+	--accentSoft: #16301f;
+	--sel: #1a2a21;
+	--warn: #f0936a;
+	--warnSoft: #2e1d15;
+	--palSel: #1f3328;
+	--v-plant_now: #5bd08f;
+	--v-plant_soon: #e7b04d;
+	--v-late: #f0936a;
+	--v-too_early: #86a9cc;
+	--v-too_late: #8e9892;
+	--k-sowing: #1c3527;
+	--k-transplant: #1c2a3a;
+	--k-harvest: #3a2f1a;
+	--k-note: #262b28;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font: 14px/1.45 var(--sans);
+}
+
+a {
+	color: var(--accent);
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+input,
+select,
+textarea,
+button {
+	font: inherit;
+	color: inherit;
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+/* Touch and narrow targets: at least 44px tall. */
+@media (max-width: 899px), (pointer: coarse) {
+	button,
+	select,
+	input:not([type='checkbox']):not([type='radio']),
+	a[href] {
+		min-height: 44px;
+	}
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.skip-link {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	z-index: 100;
+	padding: 8px 12px;
+	border-radius: 6px;
+	background: var(--panel);
+	color: var(--ink);
+	border: 1px solid var(--line2);
+	transform: translateY(-200%);
+}
+
+.skip-link:focus {
+	transform: none;
+}
+
+.placeholder {
+	color: var(--muted);
+}
