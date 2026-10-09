@@ -19,6 +19,10 @@
 	import PageHeader from '$lib/components/shell/PageHeader.svelte';
 	import Toast from '$lib/components/Toast.svelte';
 	import PrintInventory from '$lib/components/PrintInventory.svelte';
+	import CommandPalette from '$lib/components/overlays/CommandPalette.svelte';
+	import AddSeedModal from '$lib/components/overlays/AddSeedModal.svelte';
+	import SproutDrawer from '$lib/components/overlays/SproutDrawer.svelte';
+	import ShortcutsDialog from '$lib/components/overlays/ShortcutsDialog.svelte';
 
 	let { children } = $props();
 
@@ -61,6 +65,10 @@
 
 <Toast />
 <PrintInventory />
+<CommandPalette />
+<AddSeedModal />
+<SproutDrawer />
+<ShortcutsDialog />
 
 <style>
 	#app-root {
