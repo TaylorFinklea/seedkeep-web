@@ -18,6 +18,7 @@
 	import NarrowHeader from '$lib/components/shell/NarrowHeader.svelte';
 	import PageHeader from '$lib/components/shell/PageHeader.svelte';
 	import Toast from '$lib/components/Toast.svelte';
+	import PrintInventory from '$lib/components/PrintInventory.svelte';
 
 	let { children } = $props();
 
@@ -59,6 +60,7 @@
 </div>
 
 <Toast />
+<PrintInventory />
 
 <style>
 	#app-root {

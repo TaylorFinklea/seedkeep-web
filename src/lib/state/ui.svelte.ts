@@ -39,7 +39,7 @@ export const OVERLAY_LABEL: Record<OverlayId, string> = {
  * Overlays whose UI exists in this build. Parent-owned; each phase contract adds
  * the overlays it ships. Opening any other overlay only shows a toast.
  */
-export const AVAILABLE_OVERLAYS: ReadonlySet<OverlayId> = new Set<OverlayId>([]);
+export const AVAILABLE_OVERLAYS: ReadonlySet<OverlayId> = new Set<OverlayId>(['detail']);
 
 export type AddMode = 'manual' | 'photo' | 'scan';
 

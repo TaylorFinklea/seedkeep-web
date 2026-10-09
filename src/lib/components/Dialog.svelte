@@ -43,6 +43,7 @@
 		variant = 'modal',
 		initialFocus,
 		width,
+		returnFocus,
 		children
 	}: {
 		open: boolean;
@@ -53,6 +54,8 @@
 		initialFocus?: string;
 		/** Max panel width, e.g. '640px'. */
 		width?: string;
+		/** Element to focus on close; takes precedence over the remembered element. Called at close time. */
+		returnFocus?: () => HTMLElement | null | undefined;
 		children: Snippet;
 	} = $props();
 
