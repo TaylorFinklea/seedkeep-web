@@ -1,0 +1,194 @@
+// Fictional sample household, ported verbatim from the Workbench export
+// (seedkeep-data.js). CONTRACT (parent-owned). Nothing here is a real account.
+import type {
+	Bed,
+	Contribution,
+	GardenData,
+	Home,
+	JournalNote,
+	Location,
+	PlantingEvent,
+	Range,
+	Seed,
+	SeedInfo,
+	SeedInput,
+	SeedState,
+	Tag,
+	Verdict,
+	YMD
+} from './types';
+
+const I = (
+	sci: string,
+	life: string,
+	sun: string,
+	frost: string,
+	sow: string,
+	depth: number | null,
+	germ: Range | null,
+	mat: Range | null,
+	soil: Range | null,
+	spacing: number | null,
+	row: number | null,
+	viability: number | null,
+	instr: string
+): SeedInfo => ({ sci, life, sun, frost, sow, depth, germ, mat, soil, spacing, row, viability, instr });
+
+const S = (
+	id: string,
+	name: string,
+	variety: string,
+	company: string,
+	type: string,
+	state: SeedState,
+	packets: number,
+	year: number | null,
+	loc: string,
+	tags: string[],
+	verdict: Verdict | null,
+	window: [YMD, YMD] | null,
+	info: SeedInfo | null,
+	notes?: string
+): Seed => ({ id, name, variety, company, type, state, packets, year, loc, tags, verdict, window, info, notes: notes || '', catalog: !!verdict });
+
+const E = (
+	id: string,
+	bed: string,
+	seed: string,
+	kind: PlantingEvent['kind'],
+	date: YMD,
+	done: boolean,
+	x: number,
+	y: number,
+	notes?: string
+): PlantingEvent => ({ id, bed, seed, kind, date, done, x, y, notes: notes || '' });
+
+export const SAMPLE_HOME: Home = {
+	zip: '64110',
+	zone: '6b',
+	place: 'Kansas City, MO',
+	firstFrost: '2026-10-21',
+	lastFrost: '2027-04-12',
+	sunrise: '7:22 AM',
+	sunset: '6:53 PM',
+	length: '11 h 31 min',
+	riseMin: 442,
+	setMin: 1133
+};
+
+export const SAMPLE_SEEDS: Seed[] = [
+	S('s1', 'Garlic', 'Music', 'Territorial Seed', 'Garlic', 'active', 2, 2026, 'loc1', ['t3'], 'plant_now', ['2026-10-01', '2026-11-10'], I('Allium sativum', 'Grown as annual', 'Full sun', 'Hardy', 'Direct (cloves)', 2, [7, 14], [240, 270], [40, 70], 6, 12, 1, 'Plant cloves pointed end up, 2 in. deep. Mulch heavily once the ground freezes.'), 'Two heads from the farmers market.'),
+	S('s2', 'Spinach', 'Bloomsdale Long Standing', 'Seed Savers Exchange', 'Spinach', 'active', 1, 2025, 'loc1', ['t1', 't3'], 'plant_now', ['2026-09-15', '2026-10-20'], I('Spinacia oleracea', 'Annual', 'Full sun to part shade', 'Hardy', 'Direct sow', 0.5, [7, 14], [42, 48], [45, 75], 4, 12, 3, 'Sow thickly for overwintering. Cover with row cover when nights drop below 25°F.')),
+	S('s3', 'Lettuce', 'Winter Density', 'Johnny’s Selected Seeds', 'Lettuce', 'active', 1, 2024, 'loc2', ['t3'], 'late', ['2026-08-25', '2026-10-12'], I('Lactuca sativa', 'Annual', 'Full sun to part shade', 'Semi-hardy', 'Direct or transplant', 0.25, [7, 10], [55, 60], [40, 75], 8, 12, 3, 'Needs light to germinate; press seed into the surface.')),
+	S('s4', 'Radish', 'French Breakfast', 'Botanical Interests', 'Radish', 'active', 2, 2023, 'loc1', [], 'late', ['2026-08-15', '2026-10-15'], I('Raphanus sativus', 'Annual', 'Full sun', 'Semi-hardy', 'Direct sow', 0.5, [3, 7], [25, 30], [45, 85], 2, 6, 4, 'Harvest promptly; they turn pithy when left in the ground.')),
+	S('s5', 'Crimson clover', '', 'High Mowing Organic Seeds', 'Cover crop', 'active', 1, 2025, 'loc2', ['t3', 't4'], 'plant_now', ['2026-09-01', '2026-10-25'], I('Trifolium incarnatum', 'Annual', 'Full sun', 'Hardy', 'Broadcast', 0.25, [7, 10], [70, 90], [40, 85], 1, null, 3, 'Broadcast over bare beds and rake in lightly. Cut before it sets seed in spring.')),
+	S('s6', 'Mâche', 'Vit', 'Johnny’s Selected Seeds', 'Salad green', 'active', 1, 2025, 'loc2', ['t3'], 'plant_now', ['2026-09-15', '2026-10-31'], I('Valerianella locusta', 'Annual', 'Part shade', 'Hardy', 'Direct sow', 0.25, [7, 14], [50, 60], [40, 70], 3, 6, 4, 'Slow to germinate. Keep the surface moist.')),
+	S('s7', 'Onion', 'Walla Walla', 'Territorial Seed', 'Onion', 'active', 1, 2026, 'loc1', ['t3'], 'plant_soon', ['2026-10-15', '2026-11-15'], I('Allium cepa', 'Biennial', 'Full sun', 'Hardy', 'Transplant (sets)', 1, [7, 10], [110, 125], [50, 75], 4, 12, 1, 'Overwintering type. Plant sets so the tips just show.')),
+	S('s8', 'Kale', 'Lacinato', 'High Mowing Organic Seeds', 'Kale', 'active', 1, 2025, 'loc2', [], 'late', ['2026-08-01', '2026-10-10'], I('Brassica oleracea', 'Biennial', 'Full sun', 'Hardy', 'Transplant', 0.5, [5, 8], [60, 65], [45, 85], 18, 24, 4, 'Flavor sweetens after the first frosts.')),
+	S('s9', 'Tomato', 'Cherokee Purple', 'Baker Creek Heirloom Seeds', 'Tomato', 'active', 1, 2024, 'loc3', ['t1'], 'too_early', ['2027-02-25', '2027-03-20'], I('Solanum lycopersicum', 'Annual', 'Full sun', 'Tender', 'Start indoors', 0.25, [6, 10], [80, 90], [70, 90], 24, 36, 5, 'Start indoors 6–8 weeks before last frost. Transplant once nights stay above 50°F.')),
+	S('s10', 'Tomato', 'Sungold', 'Johnny’s Selected Seeds', 'Tomato', 'active', 1, 2025, 'loc3', [], 'too_early', ['2027-03-01', '2027-03-25'], I('Solanum lycopersicum', 'Annual', 'Full sun', 'Tender', 'Start indoors', 0.25, [6, 10], [57, 65], [70, 90], 24, 36, 5, 'Hybrid; saved seed will not come true.')),
+	S('s11', 'Pepper', 'Jimmy Nardello', 'Seed Savers Exchange', 'Pepper', 'active', 1, 2022, 'loc3', ['t1'], 'too_early', ['2027-02-10', '2027-03-05'], I('Capsicum annuum', 'Annual', 'Full sun', 'Tender', 'Start indoors', 0.25, [10, 21], [75, 90], [70, 90], 18, 24, 2, 'Bottom heat helps germination.')),
+	S('s12', 'Basil', 'Genovese', 'Botanical Interests', 'Herb', 'active', 1, 2023, 'loc1', ['t4'], 'too_late', ['2026-05-05', '2026-07-15'], I('Ocimum basilicum', 'Annual', 'Full sun', 'Tender', 'Direct or transplant', 0.25, [5, 10], [60, 70], [70, 85], 12, 18, 5, 'Pinch flower spikes to keep leaves coming.')),
+	S('s13', 'Bush bean', 'Provider', 'Johnny’s Selected Seeds', 'Bean', 'active', 2, 2024, 'loc1', [], 'too_late', ['2026-05-01', '2026-07-31'], I('Phaseolus vulgaris', 'Annual', 'Full sun', 'Tender', 'Direct sow', 1, [7, 10], [50, 50], [60, 85], 4, 18, 3, 'Sow in succession every three weeks.')),
+	S('s14', 'Winter squash', 'Waltham Butternut', 'Baker Creek Heirloom Seeds', 'Squash', 'active', 1, 2021, 'loc3', ['t1'], 'too_late', ['2026-05-10', '2026-06-20'], I('Cucurbita moschata', 'Annual', 'Full sun', 'Tender', 'Direct sow', 1, [7, 10], [100, 110], [70, 95], 36, 72, 4, 'Cure fruit in the sun for ten days before storing.')),
+	S('s15', 'Zinnia', 'California Giant', 'Botanical Interests', 'Flower', 'active', 1, 2025, 'loc1', ['t4'], 'too_late', ['2026-05-01', '2026-07-01'], I('Zinnia elegans', 'Annual', 'Full sun', 'Tender', 'Direct sow', 0.25, [5, 7], [75, 90], [70, 80], 12, 18, 3, 'Cut often; more flowers follow.')),
+	S('s16', 'Carrot', 'Danvers 126', 'Seed Savers Exchange', 'Carrot', 'active', 1, 2023, 'loc2', [], 'too_late', ['2026-03-20', '2026-08-01'], I('Daucus carota', 'Biennial', 'Full sun', 'Semi-hardy', 'Direct sow', 0.25, [14, 21], [70, 75], [45, 85], 2, 12, 3, 'Keep the seedbed moist until sprouts appear.')),
+	S('s17', 'Pea', 'Sugar Snap', 'Johnny’s Selected Seeds', 'Pea', 'wishlist', 0, null, '', [], 'too_early', ['2027-03-10', '2027-04-10'], I('Pisum sativum', 'Annual', 'Full sun', 'Hardy', 'Direct sow', 1, [7, 14], [58, 62], [40, 75], 2, 24, 3, 'Give them a trellis at least 5 ft tall.')),
+	S('s18', 'Shallot', 'Zebrune', 'Baker Creek Heirloom Seeds', 'Onion', 'wishlist', 0, null, '', [], 'plant_soon', ['2026-10-15', '2026-11-10'], I('Allium cepa', 'Biennial', 'Full sun', 'Hardy', 'Direct sow', 0.25, [7, 14], [100, 110], [50, 75], 4, 12, 1, '')),
+	S('s19', 'Cucumber', 'Marketmore 76', 'High Mowing Organic Seeds', 'Cucumber', 'wishlist', 0, null, '', [], null, null, null),
+	S('s20', 'Cranberry bean', 'Grandma Ruth’s', '', 'Bean', 'saved', 1, 2025, 'loc1', ['t2', 't1', 't5'], 'too_late', ['2026-05-01', '2026-07-15'], I('Phaseolus vulgaris', 'Annual', 'Full sun', 'Tender', 'Direct sow', 1, [7, 10], [65, 70], [60, 85], 4, 24, 3, ''), 'Saved from the back fence, 2025. About 60 beans.'),
+	S('s21', 'Marigold', 'French', '', 'Flower', 'saved', 1, 2025, 'loc1', ['t2', 't4'], 'too_late', ['2026-05-01', '2026-06-30'], I('Tagetes patula', 'Annual', 'Full sun', 'Tender', 'Direct or transplant', 0.25, [5, 7], [50, 60], [70, 80], 8, 12, 2, ''), 'Saved seed heads from the herb spiral.'),
+	S('s22', 'Pepper', 'Habanero', 'Ferry-Morse', 'Pepper', 'archived', 0, 2019, '', [], null, null, null, 'Germination was poor in 2024.')
+];
+
+export const SAMPLE_LOCATIONS: Location[] = [
+	{ id: 'loc1', name: 'Seed tin, pantry' },
+	{ id: 'loc2', name: 'Garage fridge' },
+	{ id: 'loc3', name: 'Desk drawer' }
+];
+
+export const SAMPLE_TAGS: Tag[] = [
+	{ id: 't1', name: 'Heirloom' },
+	{ id: 't2', name: 'Saved seed' },
+	{ id: 't3', name: 'Fall crop' },
+	{ id: 't4', name: 'Pollinator' },
+	{ id: 't5', name: 'For trade' }
+];
+
+export const SAMPLE_BEDS: Bed[] = [
+	{ id: 'b1', name: 'South raised bed', desc: 'Full sun, drip line', w: 4, l: 8 },
+	{ id: 'b2', name: 'Cold frame', desc: 'Glass lid, vent above 50°F', w: 3, l: 4 },
+	{ id: 'b3', name: 'Herb spiral', desc: 'By the back door', w: 4, l: 4 },
+	{ id: 'b4', name: 'Back fence', desc: 'Shade until 10 AM', w: 2, l: 12 }
+];
+
+export const SAMPLE_EVENTS: PlantingEvent[] = [
+	E('e3', 'b1', 's2', 'sowing', '2026-10-05', false, 3, 6.5),
+	E('e4', 'b1', 's8', 'harvest', '2026-10-09', false, 1, 6.5),
+	E('e5', 'b2', 's3', 'transplant', '2026-10-09', false, 1, 2),
+	E('e8', 'b4', 's5', 'sowing', '2026-10-10', false, 1, 4),
+	E('e9', 'b4', 's11', 'harvest', '2026-10-11', false, 1, 10),
+	E('e1', 'b1', 's1', 'sowing', '2026-10-12', false, 1.5, 1.5),
+	E('e6', 'b2', 's6', 'sowing', '2026-10-14', false, 2, 1),
+	E('e2', 'b1', 's7', 'transplant', '2026-10-20', false, 2.5, 4),
+	E('e7', 'b3', 's12', 'harvest', '2026-10-24', false, 2, 2, 'Last big harvest for pesto'),
+	E('e10', 'b3', 's4', 'sowing', '2026-09-28', true, 1, 3)
+];
+
+export const SAMPLE_NOTE: JournalNote = {
+	date: '2026-10-08',
+	body: 'Covered the cold frame last night — low of 38°. Lettuce looked fine this morning.'
+};
+
+export const SAMPLE_CONTRIBUTIONS: Contribution[] = [
+	{ id: 'c1', seed: 'Spinach — Bloomsdale Long Standing', change: 'Days to maturity (max) → 48', status: 'Applied', when: '2 days ago', detail: 'Applied automatically.' },
+	{ id: 'c2', seed: 'Tomato — Cherokee Purple', change: 'Plant spacing → 24 in', status: 'In review', when: '5 hours ago', detail: 'We’re reviewing it.' },
+	{ id: 'c3', seed: 'Crimson clover', change: 'Note: sow rate is per 1,000 sq ft, not per acre', status: 'Waiting for a person', when: 'Last week', detail: 'Saved for a human reviewer.' }
+];
+
+/** Simulated packet-photo extraction result (demo only). */
+export const SAMPLE_EXTRACT: SeedInput = {
+	name: 'Lettuce',
+	variety: 'Rouge d’Hiver',
+	company: 'Baker Creek Heirloom Seeds',
+	type: 'Lettuce',
+	year: '2026',
+	packets: '1',
+	state: 'active',
+	loc: 'loc2',
+	verdict: 'late',
+	window: ['2026-08-20', '2026-10-12'],
+	info: I('Lactuca sativa', 'Annual', 'Full sun to part shade', 'Semi-hardy', 'Direct or transplant', 0.25, [7, 10], [60, 65], [40, 75], 10, 12, 3, 'Red romaine that holds well in cold weather.')
+};
+
+/** Simulated barcode catalog match (demo only). */
+export const SAMPLE_CATALOG_HIT: SeedInput & { barcode: string } = {
+	name: 'Arugula',
+	variety: 'Astro',
+	company: 'Johnny’s Selected Seeds',
+	type: 'Salad green',
+	year: '2026',
+	packets: '1',
+	state: 'active',
+	loc: 'loc1',
+	verdict: 'plant_now',
+	window: ['2026-09-01', '2026-10-20'],
+	info: I('Eruca vesicaria', 'Annual', 'Full sun to part shade', 'Hardy', 'Direct sow', 0.25, [5, 7], [38, 40], [45, 75], 3, 10, 3, 'Milder than most arugula. Sow every two weeks.'),
+	barcode: '0 71834 05213 9'
+};
+
+/** A deep copy of the full sample household. The demo starts with no AI key saved. */
+export function sampleData(): GardenData {
+	return structuredClone({
+		seeds: SAMPLE_SEEDS,
+		beds: SAMPLE_BEDS,
+		events: SAMPLE_EVENTS,
+		locations: SAMPLE_LOCATIONS,
+		tags: SAMPLE_TAGS,
+		contributions: SAMPLE_CONTRIBUTIONS,
+		home: SAMPLE_HOME,
+		note: SAMPLE_NOTE,
+		key: { provider: 'Anthropic', saved: false, masked: '' },
+		thread: [{ role: 'bot', text: 'Hi, I’m Sprout. Ask about your seeds, your beds, or what to plant this week.' }]
+	});
+}

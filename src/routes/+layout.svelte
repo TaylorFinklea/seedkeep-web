@@ -1,13 +1,12 @@
+<!-- CONTRACT STUB — owner: Haiku (Phase 1). Replace with the Workbench shell.
+	Required structure: everything except overlays and the toast lives inside
+	<div id="app-root">, so Dialog can set it inert. Call ui.initTheme() and
+	bindShortcuts(...) in onMount (return the cleanup). -->
 <script lang="ts">
 	import '../app.css';
-	import '@phosphor-icons/web/regular';
 	let { children } = $props();
 </script>
 
-<svelte:head>
-	<title>Seedkeep · A little time in the garden</title>
-	<meta name="description" content="A quiet place to keep your garden growing." />
-</svelte:head>
-
-<a class="skip-link" href="#main">Skip to main content</a>
-{@render children?.()}
+<div id="app-root">
+	<main id="main">{@render children?.()}</main>
+</div>
