@@ -21,6 +21,10 @@ export const commands = {
 
 	/** Go to Seeds and focus the filter input `#seed-filter` (Phase 2 renders it). */
 	focusSeedFilter: async (): Promise<void> => {
+		if (!ui.wide) {
+			ui.seeds.seedId = null;
+			ui.close('detail');
+		}
 		await commands.go('seeds');
 		document.getElementById('seed-filter')?.focus();
 	},
@@ -47,6 +51,11 @@ export const commands = {
 	 * detail; otherwise on Garden clear the brush, then the selected event.
 	 */
 	escape: (): void => {
+		if (ui.top === 'detail') {
+			ui.seeds.seedId = null;
+			ui.closeTop();
+			return;
+		}
 		if (ui.closeTop()) return;
 		const key = routeKey(page.url.pathname);
 		if (key === 'seeds') { ui.seeds.seedId = null; return; }

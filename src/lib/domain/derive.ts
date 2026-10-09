@@ -1,7 +1,40 @@
 // Pure selectors over GardenData. Components call these inside `$derived(...)`.
-import { KIND, STATE_LABEL, VERDICT } from './constants';
+import { KIND, STATES, STATE_LABEL, VERDICT } from './constants';
 import { diff, fmt, plural } from './dates';
 import type { Daylight, EventRow, FrostInfo, GardenData, InfoRow, PlantingEvent, Seed, SeedRow, SeedState, StateCounts, WindowGroup } from './types';
+import type { SortKey } from '$lib/state/ui.svelte';
+
+/** Distinct seed types in display order for the Seeds filter. */
+export function typeOptions(g: GardenData): string[] {
+	return [...new Set(g.seeds.map((seed) => seed.type.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+/** Sort seed rows by the active Seeds column; missing values stay last in either direction. */
+export function sortRows(g: GardenData, rows: Seed[], sort: { key: SortKey; dir: 1 | -1 }): Seed[] {
+	const order = new Map(g.seeds.map((seed, index) => [seed.id, index]));
+	const valueFor = (seed: Seed): string | number | null | undefined =>
+		sort.key === 'loc' ? byId(g.locations, seed.loc)?.name : seed[sort.key];
+	const missing = (seed: Seed): boolean => {
+		const value = valueFor(seed);
+		return value == null || (typeof value === 'string' && value.trim() === '');
+	};
+	const compare = (a: Seed, b: Seed): number => {
+		if (missing(a) || missing(b)) return missing(a) === missing(b) ? 0 : missing(a) ? 1 : -1;
+		if (sort.key === 'verdict') return VERDICT[a.verdict!].order - VERDICT[b.verdict!].order;
+		if (sort.key === 'state') return STATES.findIndex((state) => state.key === a.state) - STATES.findIndex((state) => state.key === b.state);
+		const left = valueFor(a);
+		const right = valueFor(b);
+		if (typeof left === 'number' && typeof right === 'number') return left - right;
+		return String(left ?? '').localeCompare(String(right ?? ''), undefined, { sensitivity: 'base', numeric: true });
+	};
+	return [...rows].sort((a, b) => {
+		const missingA = missing(a);
+		const missingB = missing(b);
+		if (missingA !== missingB) return missingA ? 1 : -1;
+		if (missingA) return (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
+		return compare(a, b) * sort.dir || ((order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)) * sort.dir;
+	});
+}
 
 export function byId<T extends { id: string }>(list: T[], id: string | null | undefined): T | undefined {
 	return id ? list.find((x) => x.id === id) : undefined;
@@ -74,8 +107,9 @@ export function stateCounts(g: GardenData): StateCounts {
 
 export function filterSeeds(g: GardenData, f: { state: SeedState | 'all'; q: string; type?: string }): Seed[] {
 	const query = f.q.trim().toLowerCase();
+	const type = f.type?.trim() ?? '';
 	return g.seeds.filter((seed) =>
-		(f.state === 'all' || seed.state === f.state) && (!f.type || seed.type === f.type) &&
+		(f.state === 'all' || seed.state === f.state) && (!type || seed.type.trim() === type) &&
 		(!query || [seed.name, seed.variety, seed.company, seed.type, seed.notes].join(' ').toLowerCase().includes(query))
 	);
 }

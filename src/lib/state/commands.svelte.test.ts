@@ -18,7 +18,8 @@ describe('commands', () => {
 
 	it('escapes overlay, seed detail, then garden brush and event in order', () => {
 		ui.overlays = ['sprout']; commands.escape(); expect(ui.overlays).toEqual([]);
-		navigation.url = { pathname: '/seeds' }; ui.seeds.seedId = 's1'; commands.escape(); expect(ui.seeds.seedId).toBeNull();
+		navigation.url = { pathname: '/seeds' }; ui.seeds.seedId = 's1'; ui.open('detail'); commands.escape();
+		expect(ui.seeds.seedId).toBeNull(); expect(ui.overlays).toEqual([]);
 		navigation.url = { pathname: '/garden' }; ui.garden.brush = 's1'; ui.garden.selEv = 'e1'; commands.escape();
 		expect(ui.garden.brush).toBeNull(); expect(ui.garden.selEv).toBe('e1'); commands.escape(); expect(ui.garden.selEv).toBeNull();
 	});
@@ -27,6 +28,22 @@ describe('commands', () => {
 		commands.togglePalette(); expect(ui.overlays).toEqual([]); expect(ui.toast?.message).toContain('later build phase');
 		ui.overlays = ['detail']; commands.togglePalette(); expect(ui.overlays).toEqual(['detail']);
 		ui.overlays = ['sprout']; commands.togglePalette(); expect(ui.overlays).toEqual(['sprout']);
+	});
+
+	it('clears narrow seed detail before navigating to and focusing the filter', async () => {
+		const wide = vi.spyOn(ui, 'wide', 'get').mockReturnValue(false);
+		const focus = vi.fn();
+		vi.stubGlobal('document', { getElementById: vi.fn(() => ({ focus })) });
+		ui.seeds.seedId = 's1'; ui.overlays = ['detail'];
+
+		await commands.focusSeedFilter();
+
+		expect(ui.seeds.seedId).toBeNull();
+		expect(ui.overlays).toEqual([]);
+		expect(navigation.goto).toHaveBeenCalledWith('/seeds');
+		expect(focus).toHaveBeenCalledOnce();
+		wide.mockRestore();
+		vi.unstubAllGlobals();
 	});
 
 	it('completes idempotently through Undo and dismisses toast when toggled back', () => {

@@ -100,7 +100,9 @@
 			active = false;
 			document.removeEventListener('keydown', onKeydown);
 			if (entry) { const index = dialogLayers.indexOf(entry); if (index >= 0) dialogLayers.splice(index, 1); syncLayers(); }
-			if (priorFocus?.isConnected) priorFocus.focus();
+			const preferred = returnFocus?.();
+			const target = preferred?.isConnected ? preferred : priorFocus;
+			if (target?.isConnected) target.focus();
 		};
 	});
 </script>

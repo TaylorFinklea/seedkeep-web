@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sampleData } from './sample';
-import { abbr, daylight, dueEvents, eventRow, filterSeeds, frost, frostWarnings, infoRows, isOld, plannedFor, seedRow, upcomingEvents, whatToPlant, windowDays } from './derive';
+import { abbr, daylight, dueEvents, eventRow, filterSeeds, frost, frostWarnings, infoRows, isOld, plannedFor, seedRow, sortRows, typeOptions, upcomingEvents, whatToPlant, windowDays } from './derive';
 
 describe('garden selectors', () => {
 	const garden = sampleData();
@@ -52,5 +52,46 @@ describe('garden selectors', () => {
 		expect(plannedFor(garden, 's1')).toBe('South raised bed, Oct 12');
 		expect(plannedFor(garden, 's19')).toBe('—');
 		expect(filterSeeds(garden, { state: 'wishlist', q: 'marketmore' }).map((seed) => seed.id)).toEqual(['s19']);
+	});
+	it('sorts seed rows by every column and reverses direction', () => {
+		const expected: Record<(typeof keys)[number], string[]> = {
+			name: ['s12', 's13', 's16', 's20', 's5', 's19', 's1', 's8', 's3', 's6', 's21', 's7', 's17', 's11', 's22', 's4', 's18', 's2', 's9', 's10', 's14', 's15'],
+			variety: ['s2', 's15', 's9', 's16', 's21', 's4', 's12', 's20', 's22', 's11', 's8', 's19', 's1', 's13', 's17', 's10', 's6', 's7', 's14', 's3', 's18', 's5'],
+			type: ['s13', 's20', 's16', 's5', 's19', 's15', 's21', 's1', 's12', 's8', 's3', 's7', 's18', 's17', 's11', 's22', 's4', 's6', 's2', 's14', 's9', 's10'],
+			company: ['s9', 's14', 's18', 's4', 's12', 's15', 's22', 's5', 's8', 's19', 's3', 's6', 's10', 's13', 's17', 's2', 's11', 's16', 's1', 's7', 's20', 's21'],
+			year: ['s22', 's14', 's11', 's4', 's12', 's16', 's3', 's9', 's13', 's2', 's5', 's6', 's8', 's10', 's15', 's20', 's21', 's1', 's7', 's17', 's18', 's19'],
+			packets: ['s17', 's18', 's19', 's22', 's2', 's3', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's14', 's15', 's16', 's20', 's21', 's1', 's4', 's13'],
+			state: ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's13', 's14', 's15', 's16', 's17', 's18', 's19', 's20', 's21', 's22'],
+			loc: ['s9', 's10', 's11', 's14', 's3', 's5', 's6', 's8', 's16', 's1', 's2', 's4', 's7', 's12', 's13', 's15', 's20', 's21', 's17', 's18', 's19', 's22'],
+			verdict: ['s1', 's2', 's5', 's6', 's7', 's18', 's3', 's4', 's8', 's9', 's10', 's11', 's17', 's12', 's13', 's14', 's15', 's16', 's20', 's21', 's19', 's22']
+		};
+		const keys = ['name', 'variety', 'type', 'company', 'year', 'packets', 'state', 'loc', 'verdict'] as const;
+		for (const key of ['name', 'variety', 'type', 'company', 'year', 'packets', 'state', 'loc', 'verdict'] as const) {
+			const ascending = sortRows(garden, garden.seeds, { key, dir: 1 }).map((seed) => seed.id);
+			const descending = sortRows(garden, garden.seeds, { key, dir: -1 }).map((seed) => seed.id);
+			expect(ascending, `${key} ascending`).toEqual(expected[key]);
+			const nullsLast = key === 'variety' ? ['s5'] : key === 'company' ? ['s20', 's21'] : key === 'year' ? ['s17', 's18', 's19'] : key === 'loc' ? ['s17', 's18', 's19', 's22'] : key === 'verdict' ? ['s19', 's22'] : [];
+			const nonMissing = ascending.filter((id) => !nullsLast.includes(id));
+			expect(descending, `${key} descending`).toEqual([...nonMissing].reverse().concat(nullsLast));
+		}
+	});
+	it('keeps missing sort values last in either direction and applies verdict order', () => {
+		const unknown = garden.seeds.find((seed) => seed.id === 's19')!;
+		const known = garden.seeds.filter((seed) => seed.verdict).slice(0, 3);
+		expect(sortRows(garden, [unknown, ...known], { key: 'verdict', dir: 1 }).at(-1)?.id).toBe(unknown.id);
+		expect(sortRows(garden, [unknown, ...known], { key: 'verdict', dir: -1 }).at(-1)?.id).toBe(unknown.id);
+		const noYear = { ...known[0], year: null };
+		expect(sortRows(garden, [noYear, ...known.slice(1)], { key: 'year', dir: -1 }).at(-1)?.id).toBe(noYear.id);
+	});
+	it('trims, deduplicates and excludes blank seed type options', () => {
+		const data = { ...garden, seeds: [
+			{ ...garden.seeds[0], type: ' Garlic ' },
+			{ ...garden.seeds[1], type: 'Spinach' },
+			{ ...garden.seeds[2], type: 'Garlic' },
+			{ ...garden.seeds[3], type: '   ' },
+			{ ...garden.seeds[4], type: '' }
+		] };
+		expect(typeOptions(data)).toEqual(['Garlic', 'Spinach']);
+		expect(filterSeeds(data, { state: 'all', q: '', type: 'Garlic' }).map((seed) => seed.id)).toEqual(['s1', 's3']);
 	});
 });
