@@ -1,2 +1,6 @@
-<!-- Route body placeholder. The Planting windows view lands in Phase 4. -->
-<p class="placeholder">Planting windows arrives in Phase 4.</p>
+<!-- Planting windows route (export lines 265–275). -->
+<script lang="ts">
+	import WindowsTable from '$lib/components/windows/WindowsTable.svelte';
+</script>
+
+<WindowsTable />

@@ -7,6 +7,7 @@ vi.mock('$app/state', () => ({ page: { get url() { return navigation.url; } } })
 import { commands } from './commands';
 import { garden } from './garden.svelte';
 import { ui } from './ui.svelte';
+import { seedTitle } from '$lib/domain/derive';
 
 describe('commands', () => {
 	beforeEach(() => {
@@ -61,5 +62,18 @@ describe('commands', () => {
 		expect(ui.seeds.seedId).toBeNull(); expect(ui.overlays).toEqual([]); expect(ui.seeds.selected).toEqual(['s2']);
 		expect(ui.garden.brush).toBeNull(); expect(ui.garden.selEv).toBeNull(); expect(garden.events.some((event) => event.seed === 's1')).toBe(false);
 		ui.seeds.state = 'all'; await commands.openSeed('s2'); expect(ui.seeds.state).toBe('all'); expect(ui.seeds.seedId).toBe('s2');
+	});
+
+	it('does not plan a seed unless it is active', async () => {
+		const seed = garden.seeds.find((candidate) => candidate.state !== 'active')!;
+		ui.garden.brush = 'existing-brush';
+		ui.garden.selEv = 'e-existing';
+
+		await commands.planSeed(seed.id);
+
+		expect(ui.garden.brush).toBe('existing-brush');
+		expect(ui.garden.selEv).toBe('e-existing');
+		expect(navigation.goto).not.toHaveBeenCalled();
+		expect(ui.toast?.message).toBe(`Move ${seedTitle(seed)} to Active to plan it in a bed.`);
 	});
 });

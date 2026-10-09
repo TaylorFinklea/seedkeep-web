@@ -58,9 +58,11 @@ describe('Garden actions', () => {
 		expect(garden.saveZip('02139')).toBe(true);
 		expect(garden.home.zip).toBe('02139');
 		expect(garden.saveKey('   ')).toBe(false);
-		expect(garden.saveKey('1234567890abcdef')).toBe(true);
-		expect(garden.key).toMatchObject({ saved: true, masked: '123456••••••••cdef' });
-		expect(JSON.stringify(garden.key)).not.toContain('1234567890abcdef');
+		expect(garden.saveKey('1234567890')).toBe(true);
+		expect(garden.key).toMatchObject({ saved: true, masked: '1••••••••0' });
+		expect(garden.saveKey('1234567890123456789012345678901234567890')).toBe(true);
+		expect(garden.key.masked).toBe('12345••••••••7890');
+		expect(JSON.stringify(garden.key)).not.toContain('1234567890123456789012345678901234567890');
 		garden.setProvider('OpenAI');
 		expect(garden.key.provider).toBe('OpenAI');
 		garden.removeKey();

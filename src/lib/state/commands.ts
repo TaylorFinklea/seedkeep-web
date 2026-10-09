@@ -138,6 +138,10 @@ export const commands = {
 	planSeed: async (seedId: string): Promise<void> => {
 		const seed = garden.seeds.find((candidate) => candidate.id === seedId);
 		if (!seed) return;
+		if (seed.state !== 'active') {
+			ui.showToast(`Move ${seedTitle(seed)} to Active to plan it in a bed.`);
+			return;
+		}
 		ui.garden.brush = seedId; ui.garden.selEv = null;
 		await commands.go('garden');
 		ui.showToast(`Click empty squares to plan ${seedTitle(seed)}.`);

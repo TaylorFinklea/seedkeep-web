@@ -147,11 +147,14 @@ export class Garden implements GardenData {
 		return true;
 	};
 
-	/** Keep only a masked form (first 6 + 8 bullets + last 4) of a non-empty key. Never persisted. */
+	/** Keep only a masked form of a non-empty key. Never persisted. */
 	saveKey = (raw: string): boolean => {
 		const key = raw.trim();
 		if (!key) return false;
-		this.key = { ...this.key, saved: true, masked: `${key.slice(0, 6)}••••••••${key.slice(-4)}` };
+		const revealPerEnd = Math.floor(key.length / 8);
+		const revealStart = Math.min(6, revealPerEnd);
+		const revealEnd = Math.min(4, revealPerEnd);
+		this.key = { ...this.key, saved: true, masked: `${key.slice(0, revealStart)}••••••••${revealEnd ? key.slice(-revealEnd) : ''}` };
 		return true;
 	};
 
