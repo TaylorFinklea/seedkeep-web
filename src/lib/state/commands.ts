@@ -1,11 +1,11 @@
 // App-level commands used by the shell, shortcuts, palette and views. They
 // coordinate the garden store, UI state and navigation, including cascades.
-// CONTRACT — signatures are parent-owned; BODIES are owned by Luna (Phase 1 unless noted).
 import type { RouteKey } from '$lib/nav';
 import { hrefFor, routeKey } from '$lib/nav';
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
 import { seedTitle } from '$lib/domain/derive';
+import { KIND } from '$lib/domain/constants';
 import { plural } from '$lib/domain/dates';
 import { tick } from 'svelte';
 import { garden } from './garden.svelte';
@@ -93,7 +93,7 @@ export const commands = {
 		ui.showToast(`Exported ${plural(garden.seeds.length, 'seed')} as CSV.`);
 	},
 
-	/** Print the library inventory from any route (Phase 2 adds the print-only view; until then window.print()). */
+	/** Print the library inventory from any route. */
 	printInventory: (): void => window.print(),
 
 	/** Delete seeds and clear any selection, open detail, brush or selected event that pointed at them. */
@@ -118,6 +118,8 @@ export const commands = {
 		const seed = garden.seeds.find((candidate) => candidate.id === id);
 		if (!seed) return;
 		if (ui.seeds.state !== 'all') ui.seeds.state = seed.state;
+		if (ui.seeds.q && ![seed.name, seed.variety, seed.company, seed.type, seed.notes].join(' ').toLowerCase().includes(ui.seeds.q.trim().toLowerCase())) ui.seeds.q = '';
+		if (ui.seeds.type && seed.type.trim() !== ui.seeds.type.trim()) ui.seeds.type = '';
 		ui.seeds.seedId = id;
 		await commands.go('seeds');
 		if (!ui.wide) ui.open('detail');
@@ -131,7 +133,7 @@ export const commands = {
 		garden.toggleDone(id);
 		if (!garden.events.find((candidate) => candidate.id === id)?.done) { ui.dismissToast(); return; }
 		const seed = garden.seeds.find((candidate) => candidate.id === event.seed);
-		const kind = ({ sowing: 'sow', transplant: 'transplant', harvest: 'harvest', note: 'note' })[event.kind];
+		const kind = KIND[event.kind].toLowerCase();
 		ui.showToast(`Marked ${kind} ${seed ? seedTitle(seed) : 'Unknown seed'} done.`, { label: 'Undo', run: () => garden.updateEvent(id, { done: false }) });
 	},
 

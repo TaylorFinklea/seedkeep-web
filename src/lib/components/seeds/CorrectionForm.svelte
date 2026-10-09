@@ -46,7 +46,7 @@
 			<span>Correct value</span>
 			<input type="text" bind:value placeholder="Correct value" autocomplete="off" />
 		</label>
-		<button type="submit" class="send" disabled={!canSend}>Send</button>
+		<button type="submit" class="send" disabled={!canSend}>Save (demo)</button>
 	</form>
 {/if}
 

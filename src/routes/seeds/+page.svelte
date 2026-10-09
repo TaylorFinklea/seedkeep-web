@@ -54,17 +54,24 @@
 
 	$effect(() => {
 		const wide = ui.wide;
+		const seedId = ui.seeds.seedId;
+		const modalOpen = ui.modalOpen;
+		if (!wide && seedId && !modalOpen && !ui.isOpen('detail')) ui.open('detail');
+	});
+
+	$effect(() => {
+		const wide = ui.wide;
 		if (wide === previousWide) return;
 		previousWide = wide;
 		if (!ui.seeds.seedId) return;
 		if (wide) ui.close('detail');
-		else ui.open('detail');
+		else if (!ui.modalOpen) ui.open('detail');
 		if (focusWasInDetail) void tick().then(() => document.querySelector<HTMLElement>('[data-detail-close]')?.focus());
 	});
 
 	onMount(() => {
 		document.addEventListener('focusin', onFocusIn);
-		if (!ui.wide && ui.seeds.seedId) ui.open('detail');
+		if (!ui.wide && ui.seeds.seedId && !ui.modalOpen) ui.open('detail');
 		return () => document.removeEventListener('focusin', onFocusIn);
 	});
 	onDestroy(() => ui.close('detail'));

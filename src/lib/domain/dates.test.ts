@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, dateParts, diff, dueLabel, fmt, isYMD, parseYMD, plural, toYMD } from './dates';
+import { addDays, dateParts, diff, fmt, isYMD, parseYMD, plural, toYMD } from './dates';
 
 describe('date helpers', () => {
 	it('uses UTC date-only math', () => {
@@ -12,10 +12,6 @@ describe('date helpers', () => {
 	it('formats labels and parts', () => {
 		expect(fmt('2026-10-09')).toBe('Oct 9');
 		expect(fmt('')).toBe('');
-		expect(dueLabel('2026-10-09')).toBe('Today');
-		expect(dueLabel('2026-10-10')).toBe('Tomorrow');
-		expect(dueLabel('2026-10-12')).toBe('In 3 days');
-		expect(dueLabel('2026-10-05')).toBe('4 days late');
 		expect(plural(1, 'seed')).toBe('1 seed');
 		expect(plural(3, 'seed')).toBe('3 seeds');
 		expect(dateParts()).toEqual({ dow: 'Friday', month: 'October', day: 9, year: 2026, long: 'Friday, October 9' });

@@ -1,11 +1,17 @@
 <!-- Toast host. The live region is always present so messages are announced.
 	Visible toast: fixed bottom-centre, ink on bg, optional action (e.g. Undo). -->
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { ui } from '$lib/state/ui.svelte';
 
-	function runAction(): void {
+	/** Run the action and dismiss. The Undo button unmounts, so move focus to #main if focus fell to <body>. */
+	async function runAction(): Promise<void> {
 		ui.toast?.action?.run();
 		ui.dismissToast();
+		await tick();
+		if (document.activeElement === null || document.activeElement === document.body) {
+			document.getElementById('main')?.focus();
+		}
 	}
 </script>
 

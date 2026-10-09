@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { STATES, STATE_LABEL } from '$lib/domain/constants';
 	import { plural } from '$lib/domain/dates';
 	import { commands } from '$lib/state/commands';
@@ -8,7 +9,7 @@
 	const selectedIds = $derived([...ui.seeds.selected]);
 	const count = $derived(selectedIds.length);
 
-	function clear(): void { ui.seeds.selected = []; }
+	async function clear(): Promise<void> { ui.seeds.selected = []; await tick(); document.querySelector<HTMLInputElement>('[aria-label="Select all shown rows"]')?.focus(); }
 	function setStatus(state: (typeof STATES)[number]['key']): void {
 		const actionCount = count;
 		garden.bulkUpdate(selectedIds, { state });
@@ -38,6 +39,7 @@
 		const actionCount = count;
 		commands.deleteSeeds(selectedIds);
 		ui.showToast(`Deleted ${plural(actionCount, 'seed')}.`);
+		void clear();
 	}
 </script>
 

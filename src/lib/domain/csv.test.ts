@@ -48,5 +48,9 @@ describe('CSV', () => {
 		const imported = rowsToSeedInputs(parseCSV("name,notes\n'=SUM(A1:A2),'=keep\n")).inputs;
 		expect(imported[0].name).toBe('=SUM(A1:A2)');
 		expect(imported[0].notes).toBe('=keep');
+		const tab = sampleData();
+		tab.seeds = [{ ...tab.seeds[0], name: '\tseed' }];
+		const roundTrip = rowsToSeedInputs(parseCSV(toCSV(tab))).inputs;
+		expect(roundTrip[0].name).toBe('\tseed');
 	});
 });

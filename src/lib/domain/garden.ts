@@ -1,8 +1,7 @@
 // Square-foot grid model for the Garden painter.
-// CONTRACT STUBS — owner: Luna (Phase 3). Keep signatures; see docs/workbench/phase-3.md.
 import { TODAY } from './dates';
 import { abbr, eventRow, seedRow } from './derive';
-import { VERDICT } from './constants';
+import { KIND, VERDICT } from './constants';
 import { diff, fmt } from './dates';
 import type { Bed, EventKind, GardenData, PlantingEvent, Seed, SeedRow, YMD } from './types';
 
@@ -44,7 +43,7 @@ export function buildCells(g: GardenData, bed: Bed, selEv: string | null): Garde
 		const seed = shown ? g.seeds.find((item) => item.id === shown.seed) : undefined;
 		const frost = shown ? eventRow(g, shown).hasFrost : false;
 		const label = shown
-			? `Row ${row + 1}, square ${col + 1}: ${seed?.name ?? 'Unknown seed'}${seed?.variety ? ` — ${seed.variety}` : ''}, ${({ sowing: 'Sow', transplant: 'Transplant', harvest: 'Harvest', note: 'Note' })[shown.kind]} ${fmt(shown.date)}${shown.done ? ', done' : ''}${frost ? ', frost risk' : ''}${events.length > 1 ? `, ${events.length} plantings` : ''}`
+			? `Row ${row + 1}, square ${col + 1}: ${seed?.name ?? 'Unknown seed'}${seed?.variety ? ` — ${seed.variety}` : ''}, ${KIND[shown.kind]} ${fmt(shown.date)}${shown.done ? ', done' : ''}${frost ? ', frost risk' : ''}${events.length > 1 ? `, ${events.length} plantings` : ''}`
 			: `Row ${row + 1}, square ${col + 1}, empty`;
 		return { row, col, eventId: shown?.id ?? null, count: events.length, abbr: shown ? `${abbr(seed)}${events.length > 1 ? '+' : ''}` : '', sub: shown ? (shown.done ? 'done' : fmt(shown.date)) : '', kind: shown?.kind ?? null, done: shown?.done ?? false, selected: !!shown && shown.id === selEv, frost, label };
 	});

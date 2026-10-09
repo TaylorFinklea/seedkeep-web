@@ -1,4 +1,4 @@
-// Canned Sprout replies over the sample garden. CONTRACT STUB — owner: Luna (Phase 5).
+// Canned Sprout replies over the sample garden.
 import type { GardenData } from './types';
 import { frostWarnings, isOld, seedTitle, windowDays } from './derive';
 import { buildCells } from './garden';

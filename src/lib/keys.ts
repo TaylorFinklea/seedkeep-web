@@ -1,4 +1,4 @@
-// Global keyboard shortcuts. CONTRACT STUB — owner: Luna (Phase 1).
+// Global keyboard shortcuts.
 import type { RouteKey } from '$lib/nav';
 
 export interface ShortcutHandlers {
@@ -37,7 +37,9 @@ export function bindShortcuts(h: ShortcutHandlers, target: EventTarget = window)
 		if (key === 'Escape') { e.preventDefault(); h.escape(); return; }
 		if (h.isModalOpen()) return;
 		const element = e.target as HTMLElement | null;
-		const typing = !!element && (['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName) || element.isContentEditable);
+		const input = element?.tagName === 'INPUT' ? element as HTMLInputElement : null;
+		const nonTypingTypes = ['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file'];
+		const typing = !!element && ((element.tagName === 'INPUT' && (!input || !nonTypingTypes.includes(input.type))) || ['TEXTAREA', 'SELECT'].includes(element.tagName) || element.isContentEditable);
 		if (typing || e.metaKey || e.ctrlKey || e.altKey) { gStartedAt = 0; return; }
 		const lower = key.toLowerCase();
 		if (gStartedAt && Date.now() - gStartedAt <= 900) {

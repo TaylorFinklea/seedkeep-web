@@ -4,7 +4,7 @@
 	import { eventRow } from '$lib/domain/derive';
 	import { cellIndex } from '$lib/domain/garden';
 	const rows = $derived.by(() => {
-		const bed = garden.beds.find((item) => item.id === ui.garden.bedId);
+		const bed = garden.beds.find((item) => item.id === ui.garden.bedId) ?? garden.beds[0];
 		return bed ? garden.events.filter((event) => event.bed === bed.id).map((event) => ({ event, row: eventRow(garden, event), cell: cellIndex(bed, event) })).sort((a, b) => a.event.date.localeCompare(b.event.date)) : [];
 	});
 </script>
@@ -14,7 +14,7 @@
 		<div class="line header"><span></span><span>Date</span><span>Task</span><span>Seed</span><span>Square</span><span>Status</span></div>
 		{#each rows as item (item.event.id)}
 			<div class="line" style:background={item.row.hasFrost ? 'var(--warnSoft)' : 'transparent'}>
-				<span class="check"><input type="checkbox" aria-label={`Mark ${item.row.seedTitle} done`} checked={item.event.done} onchange={() => garden.toggleDone(item.event.id)} /></span>
+				<label class="check"><input type="checkbox" aria-label={`Mark ${item.row.seedTitle} done`} checked={item.event.done} onchange={() => garden.toggleDone(item.event.id)} /></label>
 				<span class="date">{item.row.dateLabel}</span><span>{item.row.kindLabel}</span>
 				<span class:done={item.event.done} class="seed" title={item.row.seedTitle}>{item.row.seedTitle}</span>
 				<span class="square">R{item.cell.row + 1} · S{item.cell.col + 1}</span>
@@ -29,7 +29,8 @@
 	.table { min-width: 620px; }
 	.line { display: grid; grid-template-columns: 36px 70px 96px minmax(0, 1fr) 90px 120px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
 	.header { padding: 8px 0; border-bottom-color: var(--line2); background: var(--panel2); color: var(--muted); font-size: 12px; font-weight: 600; }
-	.check { padding-left: 10px; }
+	.check { padding-left: 10px; display:flex; align-items:center; cursor:pointer; }
+	@media (max-width:899px), (pointer:coarse) { .line { grid-template-columns:44px 70px 96px minmax(0, 1fr) 90px 120px; } .check { width:44px; min-height:44px; } }
 	.check input { accent-color: var(--accent); }
 	.date { font: 12.5px var(--mono); }
 	.seed { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

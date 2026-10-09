@@ -1,11 +1,13 @@
 <!-- "+ New bed" toggle and inline form (export lines 219–221, 510–511). Owns its toggle. -->
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { garden } from '$lib/state/garden.svelte';
 	import { ui } from '$lib/state/ui.svelte';
 
 	const ERROR_ID = 'new-bed-error';
 
 	let open = $state(false);
+	let toggleEl: HTMLButtonElement | undefined = $state();
 	let name = $state('');
 	let w = $state('4');
 	let l = $state('8');
@@ -21,6 +23,16 @@
 		if (!/^\d+$/.test(text)) return null;
 		const n = Number(text);
 		return n >= 1 && n <= 20 ? n : null;
+	}
+
+	/** Close the form and return focus to the toggle, because the form's focused control unmounts. */
+	async function close(): Promise<void> {
+		error = '';
+		wInvalid = false;
+		lInvalid = false;
+		open = false;
+		await tick();
+		toggleEl?.focus();
 	}
 
 	function add(event: SubmitEvent): void {
@@ -43,17 +55,26 @@
 		name = '';
 		w = '4';
 		l = '8';
-		error = '';
-		wInvalid = false;
-		lInvalid = false;
-		open = false;
+		void close();
 	}
 
 	function cancel(): void {
-		error = '';
-		wInvalid = false;
-		lInvalid = false;
-		open = false;
+		void close();
+	}
+
+	/** Listen for Escape on the form node. Attached as an action so no template key handler is needed. */
+	function escapeWithin(node: HTMLElement) {
+		const listener = (e: KeyboardEvent) => onFormKeydown(e);
+		node.addEventListener('keydown', listener);
+		return { destroy: () => node.removeEventListener('keydown', listener) };
+	}
+
+	/** Escape inside the open form closes it, and stops the global handler from also acting. */
+	function onFormKeydown(e: KeyboardEvent): void {
+		if (e.key !== 'Escape') return;
+		e.stopPropagation();
+		e.preventDefault();
+		cancel();
 	}
 </script>
 
@@ -63,11 +84,12 @@
 		class="toggle"
 		aria-expanded={open}
 		aria-controls="new-bed-form"
+		bind:this={toggleEl}
 		onclick={() => (open = !open)}>+ New bed</button
 	>
 
 	{#if open}
-		<form id="new-bed-form" class="form" onsubmit={add}>
+		<form id="new-bed-form" class="form" onsubmit={add} use:escapeWithin>
 			<label class="field name-field">
 				<span>Bed name</span>
 				<input type="text" bind:value={name} placeholder="New bed" autocomplete="off" />

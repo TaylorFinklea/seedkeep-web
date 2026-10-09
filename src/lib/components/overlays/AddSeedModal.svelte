@@ -47,7 +47,14 @@
 	];
 </script>
 
-<Dialog variant="modal" width="640px" labelledby="add-seed-title" {open} onclose={() => addFlow.close()}>
+<Dialog
+	variant="modal"
+	width="640px"
+	labelledby="add-seed-title"
+	initialFocus='input[name="name"]'
+	{open}
+	onclose={() => addFlow.close()}
+>
 	<div class="head">
 		<h2 id="add-seed-title">Add a seed</h2>
 		<button type="button" class="close" aria-label="Close" onclick={() => addFlow.close()}>×</button>

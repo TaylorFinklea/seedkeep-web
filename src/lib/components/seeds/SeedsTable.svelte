@@ -54,6 +54,11 @@
 		});
 	});
 	$effect(() => {
+		const shown = new Set(shownIds);
+		const selected = ui.seeds.selected.filter((id) => shown.has(id));
+		if (selected.length !== ui.seeds.selected.length) ui.seeds.selected = selected;
+	});
+	$effect(() => {
 		const indeterminate = someShown;
 		void tick().then(() => { if (selectAll) selectAll.indeterminate = indeterminate; });
 	});
@@ -111,6 +116,7 @@
 	}
 	function keydown(event: KeyboardEvent, id: string, field: 'name' | 'variety' | 'type' | 'company' | 'year' | 'packets'): void {
 		const input = event.currentTarget as HTMLInputElement;
+		if (event.isComposing) return;
 		if (event.key === 'Enter') { event.preventDefault(); input.blur(); }
 		if (event.key === 'Escape') {
 			event.preventDefault();

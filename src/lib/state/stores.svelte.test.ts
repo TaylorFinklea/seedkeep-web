@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Garden } from './garden.svelte';
-import { AVAILABLE_OVERLAYS, Ui } from './ui.svelte';
+import { Ui } from './ui.svelte';
 
 describe('Garden actions', () => {
 	it('coerces new seed values and updates by id', () => {
@@ -83,9 +83,8 @@ describe('Garden actions', () => {
 });
 
 describe('UI overlay and toast state', () => {
-	afterEach(() => { vi.useRealTimers(); (AVAILABLE_OVERLAYS as Set<string>).clear(); });
+	afterEach(() => { vi.useRealTimers(); });
 	it('moves opened overlays to the top and closes one layer at a time', () => {
-		(AVAILABLE_OVERLAYS as Set<string>).add('palette').add('add').add('sprout');
 		const ui = new Ui();
 		ui.open('palette'); ui.open('sprout'); ui.open('palette');
 		expect(ui.overlays).toEqual(['sprout', 'palette']);
@@ -115,10 +114,9 @@ describe('UI overlay and toast state', () => {
 		vi.advanceTimersByTime(3000);
 		expect(ui.toast).toBeNull();
 	});
-	it('only shows a toast when an unavailable overlay is requested', () => {
+	it('opens any defined overlay', () => {
 		const ui = new Ui();
 		ui.open('shortcuts');
-		expect(ui.overlays).toEqual([]);
-		expect(ui.toast?.message).toBe('The shortcuts list arrives in a later build phase.');
+		expect(ui.overlays).toEqual(['shortcuts']);
 	});
 });

@@ -34,10 +34,6 @@ export function plural(n: number, word: string): string {
 	return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
-export function dueLabel(s: YMD): string {
-	const n = diff(s);
-	return n === 0 ? 'Today' : n < 0 ? `${plural(-n, 'day')} late` : n === 1 ? 'Tomorrow' : `In ${plural(n, 'day')}`;
-}
 
 export function dateParts(): DateParts {
 	const date = new Date(parseYMD(TODAY));

@@ -51,6 +51,12 @@ describe('keyboard shortcuts', () => {
 		expect(calls).toEqual(['add', 'sprout', 'shortcuts', 'filter', 'today']);
 		unbind();
 	});
+	it('fires shortcuts with a focused checkbox', () => {
+		const { calls, press, unbind } = setup();
+		press('n', {}, { tagName: 'INPUT', type: 'checkbox' });
+		expect(calls).toEqual(['add']);
+		unbind();
+	});
 	it('ignores typing and suspends single keys during a modal', () => {
 		const { calls, press, setModal, unbind } = setup();
 		press('n', {}, { tagName: 'INPUT' });

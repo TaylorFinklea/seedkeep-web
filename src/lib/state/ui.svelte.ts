@@ -1,6 +1,5 @@
 // UI state shared across routes: overlays, toast, theme, and per-view state that
 // must survive navigation (Seeds filters/selection/detail, Garden bed/brush).
-// CONTRACT — fields and signatures are parent-owned; method BODIES are owned by Luna (Phase 1).
 import { MediaQuery } from 'svelte/reactivity';
 import type { SeedState } from '$lib/domain/types';
 
@@ -26,20 +25,6 @@ export type OverlayId = 'palette' | 'add' | 'shortcuts' | 'sprout' | 'detail';
  * non-modal exception: a side panel the user can keep open while working.
  */
 export const MODAL_OVERLAYS: OverlayId[] = ['palette', 'add', 'shortcuts', 'detail'];
-
-export const OVERLAY_LABEL: Record<OverlayId, string> = {
-	palette: 'The command menu',
-	add: 'Add seed',
-	shortcuts: 'The shortcuts list',
-	sprout: 'Sprout',
-	detail: 'Seed detail'
-};
-
-/**
- * Overlays whose UI exists in this build. Parent-owned; each phase contract adds
- * the overlays it ships. Opening any other overlay only shows a toast.
- */
-export const AVAILABLE_OVERLAYS: ReadonlySet<OverlayId> = new Set<OverlayId>(['detail', 'palette', 'add', 'shortcuts', 'sprout']);
 
 export type AddMode = 'manual' | 'photo' | 'scan';
 
@@ -105,14 +90,9 @@ export class Ui {
 	isOpen = (id: OverlayId): boolean => this.overlays.includes(id);
 
 	/**
-	 * Push (or move to top) an overlay. If `id` is not in AVAILABLE_OVERLAYS, show the toast
-	 * `${OVERLAY_LABEL[id]} arrives in a later build phase.` and do not open anything.
+	 * Push (or move to top) an overlay.
 	 */
 	open = (id: OverlayId): void => {
-		if (!AVAILABLE_OVERLAYS.has(id)) {
-			this.showToast(`${OVERLAY_LABEL[id]} arrives in a later build phase.`);
-			return;
-		}
 		this.overlays = [...this.overlays.filter((overlay) => overlay !== id), id];
 	};
 

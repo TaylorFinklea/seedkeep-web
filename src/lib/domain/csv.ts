@@ -60,7 +60,7 @@ export function rowsToSeedInputs(rows: string[][]): { inputs: SeedInput[]; ignor
 	const get = (cells: string[], name: string): string => {
 		const i = index(name);
 		const value = i < 0 ? '' : (cells[i] ?? '').trim();
-		return /^'[=+\-@]/.test(value) ? value.slice(1) : value;
+		return /^'[=+\-@\t\r]/.test(value) ? value.slice(1) : value;
 	};
 	const inputs = rows.slice(1).filter((cells) => cells.some((value) => value.trim() !== '')).map((cells): SeedInput => {
 		const rawState = get(cells, 'status').toLowerCase();

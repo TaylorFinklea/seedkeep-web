@@ -26,7 +26,7 @@
 		<div class="grid-scroll">
 			<div class="grid" style={`--bed-length:${bed.l};grid-template-columns:repeat(${bed.l},minmax(var(--cell-min),1fr))`}>
 				{#each cells as cell (`${cell.row}-${cell.col}`)}
-					<button type="button" aria-label={cell.label} aria-pressed={cell.selected} title={cell.label} onclick={() => activate(cell)} style={`background:var(${cell.eventId ? cell.done ? '--k-note' : `--k-${cell.kind}` : '--panel2'});box-shadow:inset 0 0 0 2px ${cell.selected ? 'var(--accent)' : cell.frost ? 'var(--warn)' : 'transparent'}`}>
+					<button type="button" aria-label={cell.label} aria-pressed={cell.selected} data-cell={`${cell.row}-${cell.col}`} title={cell.label} onclick={() => activate(cell)} style={`background:var(${cell.eventId ? cell.done ? '--k-note' : `--k-${cell.kind}` : '--panel2'});box-shadow:inset 0 0 0 2px ${cell.selected ? 'var(--accent)' : cell.frost ? 'var(--warn)' : 'transparent'}`}>
 						<span>{cell.abbr}</span><small>{cell.sub}</small>
 					</button>
 				{/each}
