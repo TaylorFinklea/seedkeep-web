@@ -1,2 +1,45 @@
-<!-- CONTRACT STUB — owner: Luna (Phase 3). Reads `garden` and `ui` directly; no props. See docs/workbench/phase-3.md. -->
-<div class="stub">SquareDetails</div>
+<script lang="ts">
+	import { garden } from '$lib/state/garden.svelte';
+	import { ui } from '$lib/state/ui.svelte';
+	import { commands } from '$lib/state/commands';
+	import { byId, eventRow } from '$lib/domain/derive';
+	import { isYMD } from '$lib/domain/dates';
+	import { KIND } from '$lib/domain/constants';
+	const selected = $derived(byId(garden.events, ui.garden.selEv));
+	const event = $derived(selected?.bed === ui.garden.bedId ? selected : undefined);
+	const row = $derived(event ? eventRow(garden, event) : undefined);
+	const seed = $derived(event ? byId(garden.seeds, event.seed) : undefined);
+	const bed = $derived(byId(garden.beds, ui.garden.bedId));
+	const position = $derived(event && bed ? `${Math.max(0, Math.min(bed.w - 1, Math.floor(event.x))) + 1}, square ${Math.max(0, Math.min(bed.l - 1, Math.floor(event.y))) + 1}` : '');
+</script>
+
+<section aria-label="Square details">
+	<h2>Square details</h2>
+	{#if event && row}
+		<div class="fields">
+			<div><strong>{row.seedTitle}</strong><div class="meta">Row {position} · spacing {row.spacing ? `${row.spacing} in` : '—'}</div></div>
+			<label>Task<select aria-label="Task" value={event.kind} onchange={(e) => garden.updateEvent(event!.id, { kind: e.currentTarget.value as typeof event.kind })}>{#each Object.entries(KIND) as [kind, label]}<option value={kind}>{label}</option>{/each}</select></label>
+			<label>Date<input aria-label="Date" type="date" value={event.date} onchange={(e) => { if (isYMD(e.currentTarget.value)) garden.updateEvent(event!.id, { date: e.currentTarget.value }); }} /></label>
+			<label class="done"><input type="checkbox" checked={event.done} onchange={() => garden.toggleDone(event!.id)} /> Done</label>
+			{#if row.hasFrost}<p class="frost">{row.frost}</p>{/if}
+			<button class="clear" type="button" onclick={() => commands.removeEvent(event!.id)}>Clear square</button>
+		</div>
+	{:else}
+		<p class="empty">Pick a seed on the left, then click empty squares to plan it. Click a planted square to edit it.</p>
+	{/if}
+</section>
+
+<style>
+	section { flex: 1 1 240px; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+	h2 { font-size: 14px; margin: 0 0 8px; }
+	.fields { display: grid; gap: 10px; }
+	.meta { color: var(--muted); font-size: 12.5px; }
+	label { display: grid; gap: 3px; color: var(--muted); font-size: 12px; }
+	select, input[type='date'] { width: 100%; border: 1px solid var(--line2); border-radius: 6px; padding: 5px 7px; background: var(--panel); color: var(--ink); font-size: 14px; }
+	input[type='date'] { font-family: var(--mono); }
+	.done { display: flex; gap: 8px; align-items: center; color: var(--ink); font-size: 14px; }
+	.done input { accent-color: var(--accent); }
+	.frost { margin: 0; background: var(--warnSoft); color: var(--warn); border-radius: 6px; padding: 8px; font-size: 12.5px; }
+	.clear { justify-self: start; background: none; border: 1px solid var(--line2); border-radius: 6px; padding: 4px 10px; cursor: pointer; color: var(--warn); }
+	.empty { margin: 0; color: var(--muted); }
+</style>
