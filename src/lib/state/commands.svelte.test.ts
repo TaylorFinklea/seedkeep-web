@@ -25,10 +25,9 @@ describe('commands', () => {
 		expect(ui.garden.brush).toBeNull(); expect(ui.garden.selEv).toBe('e1'); commands.escape(); expect(ui.garden.selEv).toBeNull();
 	});
 
-	it('obeys modal palette rules and unavailable overlays do not enter the stack', () => {
-		commands.togglePalette(); expect(ui.overlays).toEqual([]); expect(ui.toast?.message).toContain('later build phase');
+	it('obeys modal palette rules and allows the palette above a non-modal overlay', () => {
+		ui.overlays = ['sprout']; commands.togglePalette(); expect(ui.overlays).toEqual(['sprout', 'palette']);
 		ui.overlays = ['detail']; commands.togglePalette(); expect(ui.overlays).toEqual(['detail']);
-		ui.overlays = ['sprout']; commands.togglePalette(); expect(ui.overlays).toEqual(['sprout']);
 	});
 
 	it('clears narrow seed detail before navigating to and focusing the filter', async () => {
@@ -62,6 +61,16 @@ describe('commands', () => {
 		expect(ui.seeds.seedId).toBeNull(); expect(ui.overlays).toEqual([]); expect(ui.seeds.selected).toEqual(['s2']);
 		expect(ui.garden.brush).toBeNull(); expect(ui.garden.selEv).toBeNull(); expect(garden.events.some((event) => event.seed === 's1')).toBe(false);
 		ui.seeds.state = 'all'; await commands.openSeed('s2'); expect(ui.seeds.state).toBe('all'); expect(ui.seeds.seedId).toBe('s2');
+	});
+
+	it('focuses the open detail close button after wide seed navigation', async () => {
+		vi.spyOn(ui, 'wide', 'get').mockReturnValue(true);
+		const focus = vi.fn();
+		vi.stubGlobal('document', { querySelector: vi.fn(() => ({ focus })) });
+		await commands.openSeed('s2');
+		expect(focus).toHaveBeenCalledOnce();
+		expect((document.querySelector as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('[data-detail-close]');
+		vi.restoreAllMocks(); vi.unstubAllGlobals();
 	});
 
 	it('does not plan a seed unless it is active', async () => {

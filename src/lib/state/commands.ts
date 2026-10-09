@@ -121,6 +121,7 @@ export const commands = {
 		ui.seeds.seedId = id;
 		await commands.go('seeds');
 		if (!ui.wide) ui.open('detail');
+		else if (typeof document !== 'undefined') document.querySelector<HTMLElement>('[data-detail-close]')?.focus();
 	},
 
 	/** Mark an event done/undone and show a toast with Undo (Phase 4 uses this on Today). */

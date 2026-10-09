@@ -59,7 +59,7 @@
 			<NarrowHeader />
 		{/if}
 		<PageHeader title={meta.title} sub={meta.sub} route={key} />
-		<main id="main">{@render children?.()}</main>
+		<main id="main" tabindex="-1">{@render children?.()}</main>
 	</div>
 </div>
 
@@ -87,5 +87,10 @@
 
 	main {
 		padding: 18px 22px 80px;
+	}
+
+	/* Programmatic focus target after navigation; no ring on the whole page. */
+	main:focus {
+		outline: none;
 	}
 </style>
