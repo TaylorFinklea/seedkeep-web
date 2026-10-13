@@ -24,8 +24,15 @@
 		commands.completeEvent(id);
 		await tick();
 		const stillDue = new Set(dueEvents(garden).map((row) => row.id));
-		const next = ids.slice(index + 1).find((x) => stillDue.has(x)) ?? ids.slice(0, index).reverse().find((x) => stillDue.has(x));
-		const target = next ? section?.querySelector<HTMLInputElement>(`input[data-due-id="${next}"]`) : null;
+		const next =
+			ids.slice(index + 1).find((x) => stillDue.has(x)) ??
+			ids
+				.slice(0, index)
+				.reverse()
+				.find((x) => stillDue.has(x));
+		const target = next
+			? section?.querySelector<HTMLInputElement>(`input[data-due-id="${next}"]`)
+			: null;
 		if (target) target.focus();
 		else heading?.focus();
 	}

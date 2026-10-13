@@ -12,12 +12,16 @@
 	let lastOpenedSeedId: string | null = ui.seeds.seedId;
 	let focusWasInDetail = false;
 	let previousSelectionCount = ui.seeds.selected.length;
-	let selectionAnnouncement = $state(previousSelectionCount ? `${previousSelectionCount} selected` : '');
+	let selectionAnnouncement = $state(
+		previousSelectionCount ? `${previousSelectionCount} selected` : ''
+	);
 
 	function focusReturnTarget(): HTMLElement | null {
 		const id = lastOpenedSeedId ?? ui.seeds.seedId;
 		if (id) {
-			const rowButton = [...document.querySelectorAll<HTMLElement>('[data-open-seed]')].find((element) => element.dataset.openSeed === id);
+			const rowButton = [...document.querySelectorAll<HTMLElement>('[data-open-seed]')].find(
+				(element) => element.dataset.openSeed === id
+			);
 			if (rowButton) return rowButton;
 		}
 		return document.getElementById('seed-filter');
@@ -66,7 +70,8 @@
 		if (!ui.seeds.seedId) return;
 		if (wide) ui.close('detail');
 		else if (!ui.modalOpen) ui.open('detail');
-		if (focusWasInDetail) void tick().then(() => document.querySelector<HTMLElement>('[data-detail-close]')?.focus());
+		if (focusWasInDetail)
+			void tick().then(() => document.querySelector<HTMLElement>('[data-detail-close]')?.focus());
 	});
 
 	onMount(() => {
@@ -91,7 +96,13 @@
 	{/if}
 </div>
 
-<Dialog variant="sheet" open={ui.isOpen('detail')} label="Seed details" onclose={closeDetail} returnFocus={focusReturnTarget}>
+<Dialog
+	variant="sheet"
+	open={ui.isOpen('detail')}
+	label="Seed details"
+	onclose={closeDetail}
+	returnFocus={focusReturnTarget}
+>
 	{#if ui.seeds.seedId}
 		<div data-detail-container>
 			{#key ui.seeds.seedId}<SeedDetail seedId={ui.seeds.seedId} onclose={closeDetail} />{/key}
@@ -100,9 +111,35 @@
 </Dialog>
 
 <style>
-	.workbench { display:flex; align-items:flex-start; gap:16px; min-width:0; }
-	.table-column { flex:1; min-width:0; }
-	.detail-container { flex:0 0 360px; position:sticky; top:12px; align-self:flex-start; max-height:calc(100vh - 110px); overflow:auto; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
-	.detail-container :global(.detail) { border:0; border-radius:0; background:transparent; }
-	@media (max-width:899px) { .workbench { display:block; } }
+	.workbench {
+		display: flex;
+		align-items: flex-start;
+		gap: 16px;
+		min-width: 0;
+	}
+	.table-column {
+		flex: 1;
+		min-width: 0;
+	}
+	.detail-container {
+		flex: 0 0 360px;
+		position: sticky;
+		top: 12px;
+		align-self: flex-start;
+		max-height: calc(100vh - 110px);
+		overflow: auto;
+		border: 1px solid var(--line);
+		border-radius: 10px;
+		background: var(--panel);
+	}
+	.detail-container :global(.detail) {
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+	}
+	@media (max-width: 899px) {
+		.workbench {
+			display: block;
+		}
+	}
 </style>

@@ -1,33 +1,42 @@
 <!-- Keyboard shortcuts dialog (export lines 367–374, list at 482). -->
 <script lang="ts">
 	import Dialog from '$lib/components/Dialog.svelte';
+	import { FEATURES } from '$lib/config';
 	import { ui } from '$lib/state/ui.svelte';
 
 	const open = $derived(ui.isOpen('shortcuts'));
 
-	const ROWS: [string, string][] = [
-		['Command menu', '⌘K'],
-		['Add a seed', 'N'],
-		['Filter seeds', '/'],
-		['Ask Sprout', 'A'],
-		['Go to Today', 'G T'],
-		['Go to Seeds', 'G S'],
-		['Go to Garden', 'G B'],
-		['Go to Planting windows', 'G W'],
-		['Go to Settings', 'G P'],
-		['Close / cancel', 'Esc'],
-		['This list', '?']
+	/** Rows for flagged-off features (Ask Sprout) are left out. */
+	const ALL_ROWS: { label: string; keys: string; enabled: boolean }[] = [
+		{ label: 'Command menu', keys: '⌘K', enabled: true },
+		{ label: 'Add a seed', keys: 'N', enabled: true },
+		{ label: 'Filter seeds', keys: '/', enabled: true },
+		{ label: 'Ask Sprout', keys: 'A', enabled: FEATURES.sprout },
+		{ label: 'Go to Today', keys: 'G T', enabled: true },
+		{ label: 'Go to Seeds', keys: 'G S', enabled: true },
+		{ label: 'Go to Garden', keys: 'G B', enabled: true },
+		{ label: 'Go to Planting windows', keys: 'G W', enabled: true },
+		{ label: 'Go to Settings', keys: 'G P', enabled: true },
+		{ label: 'Close / cancel', keys: 'Esc', enabled: true },
+		{ label: 'This list', keys: '?', enabled: true }
 	];
+	const ROWS = ALL_ROWS.filter((row) => row.enabled);
 </script>
 
-<Dialog variant="modal" width="420px" label="Keyboard shortcuts" {open} onclose={() => ui.close('shortcuts')}>
+<Dialog
+	variant="modal"
+	width="420px"
+	label="Keyboard shortcuts"
+	{open}
+	onclose={() => ui.close('shortcuts')}
+>
 	<div class="sheet">
 		<h2>Keyboard shortcuts</h2>
 		<ul>
-			{#each ROWS as [label, keys] (label)}
+			{#each ROWS as row (row.label)}
 				<li>
-					<span>{label}</span>
-					<kbd>{keys}</kbd>
+					<span>{row.label}</span>
+					<kbd>{row.keys}</kbd>
 				</li>
 			{/each}
 		</ul>

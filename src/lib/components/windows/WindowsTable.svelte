@@ -58,7 +58,11 @@
 					{#each group.rows as item (item.row.id)}
 						<tr>
 							<td>
-								<button type="button" class="seed" onclick={() => void commands.openSeed(item.row.id)}>{item.row.title}</button>
+								<button
+									type="button"
+									class="seed"
+									onclick={() => void commands.openSeed(item.row.id)}>{item.row.title}</button
+								>
 							</td>
 							<td class="muted">{item.row.stateLabel}</td>
 							<td class="mono small">{item.row.windowLabel}</td>
@@ -66,7 +70,11 @@
 							<td class="muted small ellipsis">{item.planned}</td>
 							<td class="actions">
 								{#if group.plannable && item.row.state === 'active'}
-									<button type="button" class="plan" onclick={() => void commands.planSeed(item.row.id)}>Plan</button>
+									<button
+										type="button"
+										class="plan"
+										onclick={() => void commands.planSeed(item.row.id)}>Plan</button
+									>
 								{/if}
 							</td>
 						</tr>

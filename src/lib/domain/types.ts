@@ -45,6 +45,20 @@ export interface Seed {
 	notes: string;
 	/** True when the seed matched the shared catalog (has a verdict). */
 	catalog: boolean;
+	/** Server optimistic-concurrency version (0 for not-yet-saved local rows). */
+	version: number;
+	/** Shared catalog id, or null for custom seeds. */
+	catalogId: string | null;
+	source: 'store' | 'saved' | 'gift' | 'swap';
+}
+
+export interface SeedPhoto {
+	id: string;
+	seedId: string;
+	role: 'front' | 'back' | 'extra';
+	width: number | null;
+	height: number | null;
+	capturedAt: number;
 }
 
 export interface Bed {
@@ -55,6 +69,7 @@ export interface Bed {
 	w: number;
 	/** Length in feet = number of grid columns. */
 	l: number;
+	version: number;
 }
 
 export interface PlantingEvent {
@@ -69,16 +84,19 @@ export interface PlantingEvent {
 	/** Column coordinate in feet; grid column = clamp(floor(y), 0, l-1). */
 	y: number;
 	notes: string;
+	version: number;
 }
 
 export interface Location {
 	id: string;
 	name: string;
+	version: number;
 }
 
 export interface Tag {
 	id: string;
 	name: string;
+	version: number;
 }
 
 export interface Contribution {
@@ -102,6 +120,12 @@ export interface Home {
 	/** Minutes after local midnight. */
 	riseMin: number;
 	setMin: number;
+	/** False until the household has a home ZIP (then daylight/frost are unknown). */
+	hasLocation: boolean;
+	/** Solar state for today: 'unknown' without coordinates; polar states have no rise/set times. */
+	daylight: 'normal' | 'polar-day' | 'polar-night' | 'unknown';
+	latitude: number | null;
+	longitude: number | null;
 }
 
 export interface JournalNote {
@@ -138,7 +162,8 @@ export interface GardenData {
 	tags: Tag[];
 	contributions: Contribution[];
 	home: Home;
-	note: JournalNote;
+	/** Latest journal entry, or null when the garden has none. */
+	note: JournalNote | null;
 	key: AiKey;
 	thread: ChatMessage[];
 }

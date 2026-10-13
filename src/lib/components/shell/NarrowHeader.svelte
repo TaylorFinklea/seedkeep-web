@@ -1,12 +1,24 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { NAV, routeKey } from '$lib/nav';
+	import { FEATURES } from '$lib/config';
 	import { commands } from '$lib/state/commands';
+	import { session } from '$lib/state/session.svelte';
 	import { ui } from '$lib/state/ui.svelte';
 
 	const key = $derived(routeKey(page.url.pathname));
 	const themeLabel = $derived(ui.theme === 'dark' ? 'Light' : 'Dark');
 	const themeAria = $derived(ui.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+
+	async function switchHousehold(id: string): Promise<void> {
+		try {
+			await session.selectHousehold(id);
+		} catch (e) {
+			ui.showToast(
+				e instanceof Error && e.message ? e.message : 'Couldn’t switch gardens. Try again.'
+			);
+		}
+	}
 </script>
 
 <header class="narrow">
@@ -14,11 +26,26 @@
 		<img src="/logo-mark.png" alt="" width="26" height="26" class="logo" />
 		<div class="brand">
 			<span class="name">Seedkeep</span>
-			<span class="marker">Sample data</span>
+			{#if session.households.length > 1}
+				<select
+					class="household-select"
+					aria-label="Household"
+					value={session.householdId}
+					onchange={(e) => void switchHousehold(e.currentTarget.value)}
+				>
+					{#each session.households as household (household.id)}
+						<option value={household.id}>{household.name}</option>
+					{/each}
+				</select>
+			{:else if session.household}
+				<span class="household" title={session.user?.email ?? ''}>{session.household.name}</span>
+			{/if}
 		</div>
 		<div class="actions">
 			<button type="button" class="search" onclick={() => commands.togglePalette()}>Search</button>
-			<button type="button" class="sprout" onclick={() => commands.toggleSprout()}>Sprout</button>
+			{#if FEATURES.sprout}
+				<button type="button" class="sprout" onclick={() => commands.toggleSprout()}>Sprout</button>
+			{/if}
 			<button type="button" class="theme" aria-label={themeAria} onclick={() => ui.toggleTheme()}>
 				{themeLabel}
 			</button>
@@ -79,15 +106,26 @@
 		white-space: nowrap;
 	}
 
-	.marker {
-		font-family: var(--mono);
-		font-size: 10px;
+	.household {
+		max-width: 100%;
+		font-size: 12px;
 		line-height: 1.4;
 		color: var(--muted);
-		border: 1px solid var(--line2);
-		border-radius: 999px;
-		padding: 0 6px;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.household-select {
+		max-width: 100%;
+		min-height: 44px;
+		border: 1px solid var(--line2);
+		border-radius: 6px;
+		background: var(--panel);
+		color: var(--ink);
+		font: inherit;
+		font-size: 12px;
+		padding: 4px 6px;
 	}
 
 	.actions {
@@ -101,6 +139,7 @@
 	.search,
 	.theme {
 		flex: none;
+		min-height: 44px;
 		background: var(--panel);
 		border: 1px solid var(--line);
 		border-radius: 6px;
@@ -119,6 +158,7 @@
 
 	.sprout {
 		flex: none;
+		min-height: 44px;
 		background: var(--accentSoft);
 		border: none;
 		border-radius: 6px;
@@ -147,6 +187,7 @@
 		flex: none;
 		display: inline-flex;
 		align-items: center;
+		min-height: 44px;
 		border-radius: 6px;
 		padding: 6px 10px;
 		color: var(--ink);

@@ -4,6 +4,7 @@
 	import { onDestroy, tick, untrack } from 'svelte';
 	import Dialog from '$lib/components/Dialog.svelte';
 	import { addFlow } from '$lib/state/addFlow.svelte';
+	import { FEATURES } from '$lib/config';
 	import { ui, type AddMode } from '$lib/state/ui.svelte';
 
 	const open = $derived(ui.isOpen('add'));
@@ -33,44 +34,51 @@
 			if (phase === 'reading' || phase === 'scanning') {
 				void tick().then(() => (phase === 'reading' ? dropEl : previewEl)?.focus());
 			} else if (phase === 'idle' && prev !== 'idle' && banner && mode === 'manual') {
-				void tick().then(() => fieldsEl?.querySelector<HTMLInputElement>('input[name="name"]')?.focus());
+				void tick().then(() =>
+					fieldsEl?.querySelector<HTMLInputElement>('input[name="name"]')?.focus()
+				);
 			}
 		});
 	});
 
 	onDestroy(() => addFlow.dispose());
 
-	const TABS: { mode: AddMode; label: string }[] = [
-		{ mode: 'manual', label: 'Type it in' },
-		{ mode: 'photo', label: 'From a photo' },
-		{ mode: 'scan', label: 'Scan a barcode' }
+	const ALL_TABS: { mode: AddMode; label: string; enabled: boolean }[] = [
+		{ mode: 'manual', label: 'Type it in', enabled: true },
+		{ mode: 'photo', label: 'From a photo', enabled: FEATURES.packetPhoto },
+		{ mode: 'scan', label: 'Scan a barcode', enabled: FEATURES.barcodeScan }
 	];
+	/** Only enabled modes are offered. With just "Type it in" left, the tab bar is hidden. */
+	const TABS = ALL_TABS.filter((tab) => tab.enabled);
 </script>
 
 <Dialog
 	variant="modal"
 	width="640px"
 	labelledby="add-seed-title"
-	initialFocus='input[name="name"]'
+	initialFocus={'input[name="name"]'}
 	{open}
 	onclose={() => addFlow.close()}
 >
 	<div class="head">
 		<h2 id="add-seed-title">Add a seed</h2>
-		<button type="button" class="close" aria-label="Close" onclick={() => addFlow.close()}>×</button>
+		<button type="button" class="close" aria-label="Close" onclick={() => addFlow.close()}>×</button
+		>
 	</div>
 
 	<div class="body">
-		<div class="tabs" role="group" aria-label="How to add">
-			{#each TABS as tab (tab.mode)}
-				<button
-					type="button"
-					class="tab"
-					aria-pressed={addFlow.mode === tab.mode}
-					onclick={() => addFlow.setMode(tab.mode)}>{tab.label}</button
-				>
-			{/each}
-		</div>
+		{#if TABS.length > 1}
+			<div class="tabs" role="group" aria-label="How to add">
+				{#each TABS as tab (tab.mode)}
+					<button
+						type="button"
+						class="tab"
+						aria-pressed={addFlow.mode === tab.mode}
+						onclick={() => addFlow.setMode(tab.mode)}>{tab.label}</button
+					>
+				{/each}
+			</div>
+		{/if}
 
 		<!-- One permanent live region, so the demo-honesty banner is announced when it appears. -->
 		<div class="live" role="status" aria-live="polite">
@@ -84,7 +92,7 @@
 			{/if}
 		</div>
 
-		{#if addFlow.mode === 'photo'}
+		{#if addFlow.mode === 'photo' && FEATURES.packetPhoto}
 			<div
 				class="drop"
 				role="group"
@@ -102,12 +110,16 @@
 					<div class="drop-title">Drop packet photos here</div>
 					<p class="muted">JPG or PNG. Photos stay in this browser.</p>
 					<div class="drop-actions">
-						<button type="button" class="primary" onclick={() => addFlow.pickFiles()}>Choose files</button>
-						<button type="button" class="secondary" onclick={() => addFlow.useSample()}>Use sample</button>
+						<button type="button" class="primary" onclick={() => addFlow.pickFiles()}
+							>Choose files</button
+						>
+						<button type="button" class="secondary" onclick={() => addFlow.useSample()}
+							>Use sample</button
+						>
 					</div>
 				{/if}
 			</div>
-		{:else if addFlow.mode === 'scan'}
+		{:else if addFlow.mode === 'scan' && FEATURES.barcodeScan}
 			<div class="scan" tabindex="-1" bind:this={previewEl}>
 				<div class="preview" aria-hidden="true">
 					<span class="frame"></span>
@@ -117,8 +129,11 @@
 					{addFlow.phase === 'scanning' ? 'simulating scan…' : 'center the barcode in the frame'}
 				</p>
 				<div class="center">
-					<button type="button" class="primary" disabled={addFlow.phase === 'scanning'} onclick={() => addFlow.startScan()}
-						>Simulate scan (demo)</button
+					<button
+						type="button"
+						class="primary"
+						disabled={addFlow.phase === 'scanning'}
+						onclick={() => addFlow.startScan()}>Simulate scan (demo)</button
 					>
 				</div>
 			</div>
@@ -152,7 +167,10 @@
 
 			<label class="field notes">
 				<span>Notes</span>
-				<textarea value={addFlow.form.notes} oninput={(e) => addFlow.setField('notes', e.currentTarget.value)}></textarea>
+				<textarea
+					value={addFlow.form.notes}
+					oninput={(e) => addFlow.setField('notes', e.currentTarget.value)}
+				></textarea>
 			</label>
 
 			{#if addFlow.error}
@@ -161,7 +179,12 @@
 
 			<div class="footer">
 				<button type="button" class="secondary" onclick={() => addFlow.close()}>Cancel</button>
-				<button type="button" class="primary" disabled={!addFlow.canSave} onclick={() => addFlow.save()}>Save seed</button>
+				<button
+					type="button"
+					class="primary"
+					disabled={!addFlow.canSave}
+					onclick={() => addFlow.save()}>Save seed</button
+				>
 			</div>
 		{/if}
 	</div>
@@ -219,6 +242,17 @@
 	.tab[aria-pressed='true'] {
 		background: var(--panel);
 		font-weight: 600;
+	}
+
+	@media (max-width: 899px), (pointer: coarse) {
+		.tab,
+		.close,
+		.field input,
+		.field select,
+		.primary,
+		.secondary {
+			min-height: 44px;
+		}
 	}
 
 	.live:empty {

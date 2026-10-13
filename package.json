@@ -8,7 +8,9 @@
     "build": "vite build",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "vitest run"
+    "test": "vitest run",
+    "format": "prettier --write src",
+    "lint": "prettier --check src"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.5",

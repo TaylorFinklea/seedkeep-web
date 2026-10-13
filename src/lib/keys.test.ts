@@ -27,28 +27,50 @@ function setup() {
 	const calls: string[] = [];
 	let modal = false;
 	const handlers: ShortcutHandlers = {
-		palette: () => calls.push('palette'), escape: () => calls.push('escape'), add: () => calls.push('add'),
-		filter: () => calls.push('filter'), shortcuts: () => calls.push('shortcuts'), sprout: () => calls.push('sprout'),
-		go: (key: RouteKey) => calls.push(key), isModalOpen: () => modal
+		palette: () => calls.push('palette'),
+		escape: () => calls.push('escape'),
+		add: () => calls.push('add'),
+		filter: () => calls.push('filter'),
+		shortcuts: () => calls.push('shortcuts'),
+		sprout: () => calls.push('sprout'),
+		go: (key: RouteKey) => calls.push(key),
+		isModalOpen: () => modal
 	};
 	const unbind = bindShortcuts(handlers, target);
-	const press = (key: string, options: Partial<KeyEvent> = {}, targetProps?: Record<string, unknown>) => {
-		if (targetProps) Object.entries(targetProps).forEach(([name, value]) => Object.defineProperty(target, name, { configurable: true, value }));
+	const press = (
+		key: string,
+		options: Partial<KeyEvent> = {},
+		targetProps?: Record<string, unknown>
+	) => {
+		if (targetProps)
+			Object.entries(targetProps).forEach(([name, value]) =>
+				Object.defineProperty(target, name, { configurable: true, value })
+			);
 		const event = new KeyEvent(key, options);
 		target.dispatchEvent(event);
 		return event;
 	};
-	return { target, calls, press, unbind, setModal: (value: boolean) => { modal = value; } };
+	return {
+		target,
+		calls,
+		press,
+		unbind,
+		setModal: (value: boolean) => {
+			modal = value;
+		}
+	};
 }
 
 describe('keyboard shortcuts', () => {
 	it('handles letter shortcuts and G route chords case-insensitively', () => {
 		const { calls, press, unbind } = setup();
 		expect(press('N').defaultPrevented).toBe(true);
-		press('a'); press('?'); press('/');
+		press('a');
+		press('?');
+		press('/');
 		press('g');
 		expect(press('T').defaultPrevented).toBe(true);
-		expect(calls).toEqual(['add', 'sprout', 'shortcuts', 'filter', 'today']);
+		expect(calls).toEqual(['add', 'shortcuts', 'filter', 'today']);
 		unbind();
 	});
 	it('fires shortcuts with a focused checkbox', () => {
@@ -79,16 +101,22 @@ describe('keyboard shortcuts', () => {
 	});
 	it('preserves a G chord across a real modifier key and rejects modified single keys', () => {
 		const { calls, press, unbind } = setup();
-		press('g'); press('Shift', { shiftKey: true }); press('s', { shiftKey: true });
+		press('g');
+		press('Shift', { shiftKey: true });
+		press('s', { shiftKey: true });
 		expect(calls).toEqual(['seeds']);
-		press('a', { altKey: true }); press('a', { metaKey: true }); press('a', { ctrlKey: true });
+		press('a', { altKey: true });
+		press('a', { metaKey: true });
+		press('a', { ctrlKey: true });
 		expect(calls).toEqual(['seeds']);
 		unbind();
 	});
 	it('handles Escape while typing and blocks chords while modal', () => {
 		const { calls, press, setModal, unbind } = setup();
 		press('Escape', {}, { tagName: 'INPUT' });
-		setModal(true); press('g'); press('s');
+		setModal(true);
+		press('g');
+		press('s');
 		expect(calls).toEqual(['escape']);
 		unbind();
 	});

@@ -57,7 +57,9 @@
 				<div class="title">Sprout</div>
 				<div class="subline">Sample replies · no AI provider is called</div>
 			</div>
-			<button type="button" class="close" aria-label="Close" onclick={() => ui.close('sprout')}>×</button>
+			<button type="button" class="close" aria-label="Close" onclick={() => ui.close('sprout')}
+				>×</button
+			>
 		</div>
 
 		<div
@@ -87,7 +89,12 @@
 
 		<div class="suggestions">
 			{#each sprout.suggestions as suggestion (suggestion)}
-				<button type="button" class="chip" disabled={sprout.thinking} onclick={() => sprout.send(suggestion)}>{suggestion}</button>
+				<button
+					type="button"
+					class="chip"
+					disabled={sprout.thinking}
+					onclick={() => sprout.send(suggestion)}>{suggestion}</button
+				>
 			{/each}
 		</div>
 
@@ -102,7 +109,9 @@
 					onkeydown={onDraftKeydown}
 				/>
 			</label>
-			<button type="button" class="send" disabled={sprout.thinking} onclick={() => sprout.send()}>Send</button>
+			<button type="button" class="send" disabled={sprout.thinking} onclick={() => sprout.send()}
+				>Send</button
+			>
 		</div>
 	</div>
 </Dialog>

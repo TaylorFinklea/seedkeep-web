@@ -14,11 +14,17 @@
 	</div>
 	{#each rows as row (row.id)}
 		<div class="row">
-			<span class="dot" style:background={row.dot}><span class="sr-only">{row.verdictLabel}</span></span>
-			<button type="button" class="title" onclick={() => void commands.openSeed(row.id)}>{row.title}</button>
+			<span class="dot" style:background={row.dot}
+				><span class="sr-only">{row.verdictLabel}</span></span
+			>
+			<button type="button" class="title" onclick={() => void commands.openSeed(row.id)}
+				>{row.title}</button
+			>
 			<span class="mono muted days">{row.daysLabel}</span>
 			{#if row.state === 'active'}
-				<button type="button" class="plan" onclick={() => void commands.planSeed(row.id)}>Plan</button>
+				<button type="button" class="plan" onclick={() => void commands.planSeed(row.id)}
+					>Plan</button
+				>
 			{:else}
 				<span></span>
 			{/if}

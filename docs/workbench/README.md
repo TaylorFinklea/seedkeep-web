@@ -59,6 +59,14 @@ and `@fontsource/jetbrains-mono`. No new dependencies.
 - Colour is never the only signal; a text label always accompanies a dot or
   ring.
 
+## Real-data phases (web M1 Phase 4 onward)
+
+The app now talks to `seedkeep-server`. The phase files supersede the
+sample-data and demo rules above where they conflict:
+- data comes from the API through the repository
+- sample fixtures are for tests only
+- M2 features are hidden with `FEATURES` flags rather than shown as demos
+
 ## Demo honesty
 
 This is a sample-data prototype. Copy must not claim sync, upload, extraction,

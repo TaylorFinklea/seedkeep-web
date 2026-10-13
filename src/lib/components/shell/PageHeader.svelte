@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { RouteKey } from '$lib/nav';
+	import { FEATURES } from '$lib/config';
 	import { commands } from '$lib/state/commands';
 
 	let {
@@ -18,7 +19,11 @@
 	<span class="sub">{sub}</span>
 	<div class="actions">
 		{#if route === 'seeds'}
-			<button type="button" class="secondary" onclick={() => commands.importCSV()}>Import CSV</button>
+			{#if FEATURES.csvImport}
+				<button type="button" class="secondary" onclick={() => commands.importCSV()}
+					>Import CSV</button
+				>
+			{/if}
 			<button type="button" class="secondary" onclick={() => commands.exportCSV()}>Export</button>
 		{/if}
 		<button type="button" class="add" onclick={() => commands.openAdd()}>
@@ -93,5 +98,12 @@
 	.hint {
 		font-size: 11px;
 		opacity: 0.75;
+	}
+
+	@media (max-width: 899px), (pointer: coarse) {
+		.secondary,
+		.add {
+			min-height: 44px;
+		}
 	}
 </style>

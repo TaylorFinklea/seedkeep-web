@@ -14,9 +14,14 @@
 		return () => clearInterval(timer);
 	});
 
-	const day = $derived(daylight(garden, now));
-	const fr = $derived(frost(garden));
-	const dp = dateParts();
+	const hasLocation = $derived(garden.home.hasLocation);
+	const frostKnown = $derived(hasLocation && !!garden.home.firstFrost);
+	/** Solar state from the store: 'normal' draws the bar; the rest are plain-text states. */
+	const solar = $derived(hasLocation ? garden.home.daylight : 'unknown');
+
+	const day = $derived(solar === 'normal' ? daylight(garden, now) : null);
+	const fr = $derived(frostKnown ? frost(garden) : null);
+	const dp = $derived(dateParts());
 </script>
 
 <section class="panel" aria-labelledby="daylight-title">
@@ -24,31 +29,51 @@
 		<h2 id="daylight-title">Daylight</h2>
 		<span class="mono muted date">{dp.long}</span>
 	</div>
-	<div class="bar" role="img" aria-label={`Daylight ${day.sunrise} to ${day.sunset}`}>
-		<div class="span" style:left={day.left} style:width={day.width}></div>
-		<div class="now" style:left={day.now}></div>
-	</div>
-	<div class="hours mono">
-		<span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>12a</span>
-	</div>
-	<div class="stats">
-		<div>
-			<div class="label">Sunrise</div>
-			<div class="value mono">{day.sunrise}</div>
+
+	{#if !hasLocation}
+		<p class="prompt">
+			Set your home ZIP in <a href="/settings">Settings</a> to see sunrise, sunset and first frost.
+		</p>
+	{:else if solar === 'polar-day'}
+		<p class="polar">Sun up all day</p>
+	{:else if solar === 'polar-night'}
+		<p class="polar">Sun down all day</p>
+	{:else if solar === 'unknown'}
+		<p class="polar muted">Sunrise and sunset aren’t available for this ZIP.</p>
+	{:else if day}
+		<div class="bar" role="img" aria-label={`Daylight ${day.sunrise} to ${day.sunset}`}>
+			<div class="span" style:left={day.left} style:width={day.width}></div>
+			<div class="now" style:left={day.now}></div>
 		</div>
-		<div>
-			<div class="label">Sunset</div>
-			<div class="value mono">{day.sunset}</div>
+		<div class="hours mono">
+			<span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>12a</span>
 		</div>
-		<div>
-			<div class="label">Length</div>
-			<div class="value mono">{day.length}</div>
+		<div class="stats">
+			<div>
+				<div class="label">Sunrise</div>
+				<div class="value mono">{day.sunrise}</div>
+			</div>
+			<div>
+				<div class="label">Sunset</div>
+				<div class="value mono">{day.sunset}</div>
+			</div>
+			<div>
+				<div class="label">Length</div>
+				<div class="value mono">{day.length}</div>
+			</div>
 		</div>
-	</div>
-	<div class="foot">
-		<span>First frost, Zone {garden.home.zone}</span>
-		<span class="mono warn">{fr.date} · {fr.daysText}</span>
-	</div>
+	{/if}
+
+	{#if hasLocation}
+		<div class="foot">
+			<span>First frost, Zone {garden.home.zone}</span>
+			{#if fr}
+				<span class="mono warn">{fr.date} · {fr.daysText}</span>
+			{:else}
+				<span class="muted">No frost date for this ZIP</span>
+			{/if}
+		</div>
+	{/if}
 </section>
 
 <style>
@@ -71,6 +96,23 @@
 		margin: 0;
 		font-size: 14px;
 		font-weight: 700;
+	}
+
+	.prompt,
+	.polar {
+		margin: 12px 0 0;
+		font-size: 15px;
+	}
+
+	.prompt a {
+		color: var(--accent);
+		font-weight: 600;
+	}
+
+	.prompt a:focus-visible,
+	a:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
 	}
 
 	.bar {
@@ -144,5 +186,13 @@
 
 	.warn {
 		color: var(--warn);
+	}
+
+	@media (max-width: 899px), (pointer: coarse) {
+		.prompt a {
+			display: inline-block;
+			min-height: 44px;
+			line-height: 44px;
+		}
 	}
 </style>

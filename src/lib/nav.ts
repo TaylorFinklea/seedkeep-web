@@ -1,7 +1,6 @@
 // Route table, nav counts and page headers. CONTRACT (parent-owned).
 import { dateParts, fmt, plural } from '$lib/domain/dates';
 import { dueEvents, stateCounts } from '$lib/domain/derive';
-import { SAMPLE_USER } from '$lib/domain/constants';
 import type { GardenData } from '$lib/domain/types';
 
 export type RouteKey = 'today' | 'seeds' | 'garden' | 'windows' | 'settings';
@@ -39,17 +38,34 @@ export function navCount(key: RouteKey, g: GardenData): number | '' {
 	return '';
 }
 
-export function pageMeta(key: RouteKey, g: GardenData): { title: string; sub: string } {
+/** Page header text. `householdName` is the signed-in garden's name (Settings subtitle). */
+export function pageMeta(
+	key: RouteKey,
+	g: GardenData,
+	householdName = ''
+): { title: string; sub: string } {
 	switch (key) {
 		case 'today':
 			return { title: 'Today', sub: dateParts().long };
 		case 'seeds':
-			return { title: 'Seeds', sub: stateCounts(g).active + ' active · ' + g.seeds.length + ' total' };
+			return {
+				title: 'Seeds',
+				sub: stateCounts(g).active + ' active · ' + g.seeds.length + ' total'
+			};
 		case 'garden':
 			return { title: 'Garden', sub: plural(g.beds.length, 'bed') };
 		case 'windows':
-			return { title: 'Planting windows', sub: 'ZIP ' + g.home.zip + ' · Zone ' + g.home.zone + ' · first frost ' + fmt(g.home.firstFrost) };
+			return {
+				title: 'Planting windows',
+				sub:
+					'ZIP ' +
+					g.home.zip +
+					' · Zone ' +
+					g.home.zone +
+					' · first frost ' +
+					fmt(g.home.firstFrost)
+			};
 		case 'settings':
-			return { title: 'Settings', sub: SAMPLE_USER.household };
+			return { title: 'Settings', sub: householdName };
 	}
 }

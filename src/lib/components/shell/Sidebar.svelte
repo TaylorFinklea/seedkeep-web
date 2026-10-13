@@ -1,22 +1,54 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { NAV, navCount, routeKey } from '$lib/nav';
-	import { SAMPLE_USER } from '$lib/domain/constants';
+	import { FEATURES } from '$lib/config';
 	import { commands } from '$lib/state/commands';
 	import { garden } from '$lib/state/garden.svelte';
+	import { session } from '$lib/state/session.svelte';
 	import { ui } from '$lib/state/ui.svelte';
 
 	const key = $derived(routeKey(page.url.pathname));
 	const items = $derived(NAV.map((n) => ({ ...n, count: navCount(n.key, garden) })));
 	const themeLabel = $derived(ui.theme === 'dark' ? 'Light' : 'Dark');
 	const themeAria = $derived(ui.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+
+	async function switchHousehold(id: string): Promise<void> {
+		try {
+			await session.selectHousehold(id);
+		} catch (e) {
+			ui.showToast(
+				e instanceof Error && e.message ? e.message : 'Couldn’t switch gardens. Try again.'
+			);
+		}
+	}
 </script>
 
 <aside class="sidebar">
 	<div class="brand">
 		<img src="/logo-mark.png" alt="" width="26" height="26" class="logo" />
 		<span class="name">Seedkeep</span>
-		<span class="zip">{garden.home.zip}</span>
+		{#if garden.home.hasLocation}
+			<span class="zip">{garden.home.zip}</span>
+		{/if}
+	</div>
+
+	<div class="household">
+		{#if session.households.length > 1}
+			<label class="household-label">
+				<span class="sr-only-label">Household</span>
+				<select
+					class="household-select"
+					value={session.householdId}
+					onchange={(e) => void switchHousehold(e.currentTarget.value)}
+				>
+					{#each session.households as household (household.id)}
+						<option value={household.id}>{household.name}</option>
+					{/each}
+				</select>
+			</label>
+		{:else}
+			<div class="household-name">{session.household?.name ?? ''}</div>
+		{/if}
 	</div>
 
 	<button type="button" class="search" onclick={() => commands.togglePalette()}>
@@ -43,9 +75,13 @@
 
 	<div class="section-label">Tools</div>
 	<div class="tools">
-		<button type="button" class="tool" onclick={() => commands.importCSV()}>Import CSV</button>
+		{#if FEATURES.csvImport}
+			<button type="button" class="tool" onclick={() => commands.importCSV()}>Import CSV</button>
+		{/if}
 		<button type="button" class="tool" onclick={() => commands.exportCSV()}>Export CSV</button>
-		<button type="button" class="tool" onclick={() => commands.printInventory()}>Print inventory</button>
+		<button type="button" class="tool" onclick={() => commands.printInventory()}
+			>Print inventory</button
+		>
 		<button type="button" class="tool" onclick={() => commands.openShortcuts()}>
 			<span class="grow">Keyboard shortcuts</span>
 			<span class="mono hint">?</span>
@@ -53,13 +89,14 @@
 	</div>
 
 	<div class="footer">
-		<button type="button" class="sprout" onclick={() => commands.toggleSprout()}>
-			<span>Ask Sprout</span>
-			<span class="mono hint">A</span>
-		</button>
-		<span class="mono marker">Sample data</span>
+		{#if FEATURES.sprout}
+			<button type="button" class="sprout" onclick={() => commands.toggleSprout()}>
+				<span>Ask Sprout</span>
+				<span class="mono hint">A</span>
+			</button>
+		{/if}
 		<div class="user">
-			<span class="name-user">{SAMPLE_USER.name}</span>
+			<span class="name-user" title={session.user?.email ?? ''}>{session.user?.email ?? ''}</span>
 			<button type="button" class="theme" aria-label={themeAria} onclick={() => ui.toggleTheme()}>
 				{themeLabel}
 			</button>
@@ -262,15 +299,53 @@
 		text-overflow: ellipsis;
 	}
 
-	.marker {
-		justify-self: start;
-		font-size: 11px;
-		color: var(--muted);
-		border: 1px solid var(--line2);
-		border-radius: 999px;
-		padding: 0 7px;
-		margin-left: 9px;
+	.household {
+		padding: 0 8px 12px;
+	}
+
+	.household-name {
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--ink);
+		overflow: hidden;
+		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.household-label {
+		display: block;
+	}
+
+	.household-select {
+		width: 100%;
+		min-height: 32px;
+		border: 1px solid var(--line2);
+		border-radius: 6px;
+		background: var(--panel);
+		color: var(--ink);
+		font: inherit;
+		font-size: 13px;
+		padding: 4px 6px;
+	}
+
+	.sr-only-label {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+	}
+
+	@media (max-width: 899px), (pointer: coarse) {
+		.household-select,
+		.tool,
+		.nav-item,
+		.search,
+		.sprout,
+		.theme {
+			min-height: 44px;
+		}
 	}
 
 	.theme {

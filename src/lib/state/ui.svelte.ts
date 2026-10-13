@@ -28,7 +28,8 @@ export const MODAL_OVERLAYS: OverlayId[] = ['palette', 'add', 'shortcuts', 'deta
 
 export type AddMode = 'manual' | 'photo' | 'scan';
 
-export type SortKey = 'name' | 'variety' | 'type' | 'company' | 'year' | 'packets' | 'state' | 'loc' | 'verdict';
+export type SortKey =
+	'name' | 'variety' | 'type' | 'company' | 'year' | 'packets' | 'state' | 'loc' | 'verdict';
 
 export interface ToastAction {
 	label: string;
@@ -66,12 +67,22 @@ export class Ui {
 	overlays = $state<OverlayId[]>([]);
 	addMode = $state<AddMode>('manual');
 	toast = $state<Toast | null>(null);
-	seeds = $state<SeedsView>({ state: 'active', q: '', type: '', sort: { key: 'name', dir: 1 }, selected: [], seedId: null });
+	seeds = $state<SeedsView>({
+		state: 'active',
+		q: '',
+		type: '',
+		sort: { key: 'name', dir: 1 },
+		selected: [],
+		seedId: null
+	});
 	garden = $state<GardenView>({ bedId: 'b1', brush: null, selEv: null });
 
 	// Created only in a browser: Svelte's browser MediaQuery calls window.matchMedia
 	// immediately, and Vitest runs in Node with browser conditions.
-	#wideQuery = typeof window !== 'undefined' && 'matchMedia' in window ? new MediaQuery('min-width: 900px') : null;
+	#wideQuery =
+		typeof window !== 'undefined' && 'matchMedia' in window
+			? new MediaQuery('min-width: 900px')
+			: null;
 
 	/** True at ≥900px (sidebar layout). Defaults to true outside a browser. */
 	get wide(): boolean {
@@ -119,10 +130,13 @@ export class Ui {
 		toastIds.set(this, id);
 		this.dismissToast();
 		this.toast = { id, message, ...(action ? { action } : {}) };
-		const timer = setTimeout(() => {
-			if (this.toast?.id === id) this.toast = null;
-			toastTimers.delete(this);
-		}, action ? 6000 : 2800);
+		const timer = setTimeout(
+			() => {
+				if (this.toast?.id === id) this.toast = null;
+				toastTimers.delete(this);
+			},
+			action ? 6000 : 2800
+		);
 		toastTimers.set(this, timer);
 	};
 
@@ -139,8 +153,14 @@ export class Ui {
 		try {
 			const stored = localStorage.getItem('seedkeep-theme');
 			if (stored === 'light' || stored === 'dark') theme = stored;
-		} catch { /* Storage may be disabled. */ }
-		if (!theme) theme = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		} catch {
+			/* Storage may be disabled. */
+		}
+		if (!theme)
+			theme =
+				typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches
+					? 'dark'
+					: 'light';
 		this.theme = theme;
 		applyTheme(theme);
 	};
@@ -149,7 +169,11 @@ export class Ui {
 	toggleTheme = (): void => {
 		this.theme = this.theme === 'dark' ? 'light' : 'dark';
 		applyTheme(this.theme);
-		try { localStorage.setItem('seedkeep-theme', this.theme); } catch { /* Storage may be disabled. */ }
+		try {
+			localStorage.setItem('seedkeep-theme', this.theme);
+		} catch {
+			/* Storage may be disabled. */
+		}
 	};
 }
 

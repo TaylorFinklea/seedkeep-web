@@ -2,39 +2,75 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const navigation = vi.hoisted(() => ({ goto: vi.fn(), url: { pathname: '/today' } }));
 vi.mock('$app/navigation', () => ({ goto: navigation.goto }));
-vi.mock('$app/state', () => ({ page: { get url() { return navigation.url; } } }));
+vi.mock('$app/state', () => ({
+	page: {
+		get url() {
+			return navigation.url;
+		}
+	}
+}));
 
 import { commands } from './commands';
 import { garden } from './garden.svelte';
 import { ui } from './ui.svelte';
 import { seedTitle } from '$lib/domain/derive';
+import { sampleData } from '$lib/domain/sample';
 
 describe('commands', () => {
 	beforeEach(() => {
-		ui.overlays = []; ui.toast = null;
-		ui.seeds.state = 'active'; ui.seeds.seedId = null; ui.seeds.selected = [];
-		ui.garden.brush = null; ui.garden.selEv = null;
-		navigation.goto.mockClear(); navigation.url = { pathname: '/today' };
+		vi.restoreAllMocks();
+		const sample = sampleData();
+		garden.seeds = sample.seeds;
+		garden.events = sample.events;
+		garden.beds = sample.beds;
+		garden.locations = sample.locations;
+		garden.tags = sample.tags;
+		ui.overlays = [];
+		ui.toast = null;
+		ui.seeds.state = 'active';
+		ui.seeds.seedId = null;
+		ui.seeds.selected = [];
+		ui.garden.brush = null;
+		ui.garden.selEv = null;
+		navigation.goto.mockClear();
+		navigation.url = { pathname: '/today' };
 	});
 
 	it('escapes overlay, seed detail, then garden brush and event in order', () => {
-		ui.overlays = ['sprout']; commands.escape(); expect(ui.overlays).toEqual([]);
-		navigation.url = { pathname: '/seeds' }; ui.seeds.seedId = 's1'; ui.open('detail'); commands.escape();
-		expect(ui.seeds.seedId).toBeNull(); expect(ui.overlays).toEqual([]);
-		navigation.url = { pathname: '/garden' }; ui.garden.brush = 's1'; ui.garden.selEv = 'e1'; commands.escape();
-		expect(ui.garden.brush).toBeNull(); expect(ui.garden.selEv).toBe('e1'); commands.escape(); expect(ui.garden.selEv).toBeNull();
+		ui.overlays = ['sprout'];
+		commands.escape();
+		expect(ui.overlays).toEqual([]);
+		navigation.url = { pathname: '/seeds' };
+		ui.seeds.seedId = 's1';
+		ui.open('detail');
+		commands.escape();
+		expect(ui.seeds.seedId).toBeNull();
+		expect(ui.overlays).toEqual([]);
+		navigation.url = { pathname: '/garden' };
+		ui.garden.brush = 's1';
+		ui.garden.selEv = 'e1';
+		commands.escape();
+		expect(ui.garden.brush).toBeNull();
+		expect(ui.garden.selEv).toBe('e1');
+		commands.escape();
+		expect(ui.garden.selEv).toBeNull();
 	});
 
 	it('obeys modal palette rules and allows the palette above a non-modal overlay', () => {
-		ui.overlays = ['sprout']; commands.togglePalette(); expect(ui.overlays).toEqual(['sprout', 'palette']);
-		ui.overlays = ['detail']; commands.togglePalette(); expect(ui.overlays).toEqual(['detail']);
+		ui.overlays = ['sprout'];
+		commands.togglePalette();
+		expect(ui.overlays).toEqual(['sprout', 'palette']);
+		ui.overlays = ['detail'];
+		commands.togglePalette();
+		expect(ui.overlays).toEqual(['detail']);
 	});
 
 	it('clears narrow seed detail before navigating to and focusing the filter', async () => {
 		const wide = vi.spyOn(ui, 'wide', 'get').mockReturnValue(false);
 		const focus = vi.fn();
 		vi.stubGlobal('document', { getElementById: vi.fn(() => ({ focus })) });
-		ui.seeds.seedId = 's1'; ui.overlays = ['detail'];
+		ui.seeds.seedId = 's1';
+		ui.overlays = ['detail'];
 
 		await commands.focusSeedFilter();
 
@@ -46,21 +82,50 @@ describe('commands', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('completes idempotently through Undo and dismisses toast when toggled back', () => {
+	it('completes idempotently through Undo and dismisses toast when toggled back', async () => {
 		const event = garden.events.find((candidate) => candidate.id === 'e3')!;
-		event.done = false; commands.completeEvent(event.id);
+		garden.events = garden.events.map((e) => (e.id === event.id ? { ...e, done: false } : e));
+		vi.spyOn(garden, 'toggleDone').mockImplementation(async (id) => {
+			garden.events = garden.events.map((e) => (e.id === id ? { ...e, done: !e.done } : e));
+			return true;
+		});
+		vi.spyOn(garden, 'updateEvent').mockImplementation(async (id, patch) => {
+			garden.events = garden.events.map((e) => (e.id === id ? { ...e, ...patch } : e));
+			return true;
+		});
+		await commands.completeEvent(event.id);
 		expect(garden.events.find((candidate) => candidate.id === event.id)?.done).toBe(true);
-		const undo = ui.toast!.action!; undo.run(); undo.run();
+		const undo = ui.toast!.action!;
+		undo.run();
+		undo.run();
 		expect(garden.events.find((candidate) => candidate.id === event.id)?.done).toBe(false);
-		commands.completeEvent(event.id); commands.completeEvent(event.id); expect(ui.toast).toBeNull();
+		await commands.completeEvent(event.id);
+		await commands.completeEvent(event.id);
+		expect(ui.toast).toBeNull();
 	});
 
 	it('deletes seed references and closes detail; preserves all state on openSeed', async () => {
-		ui.seeds.seedId = 's1'; ui.seeds.selected = ['s1', 's2']; ui.garden.brush = 's1'; ui.garden.selEv = 'e1'; ui.overlays = ['detail'];
-		commands.deleteSeeds(['s1']);
-		expect(ui.seeds.seedId).toBeNull(); expect(ui.overlays).toEqual([]); expect(ui.seeds.selected).toEqual(['s2']);
-		expect(ui.garden.brush).toBeNull(); expect(ui.garden.selEv).toBeNull(); expect(garden.events.some((event) => event.seed === 's1')).toBe(false);
-		ui.seeds.state = 'all'; await commands.openSeed('s2'); expect(ui.seeds.state).toBe('all'); expect(ui.seeds.seedId).toBe('s2');
+		ui.seeds.seedId = 's1';
+		ui.seeds.selected = ['s1', 's2'];
+		ui.garden.brush = 's1';
+		ui.garden.selEv = 'e1';
+		ui.overlays = ['detail'];
+		vi.spyOn(garden, 'removeSeeds').mockImplementation(async (ids) => {
+			garden.seeds = garden.seeds.filter((s) => !ids.includes(s.id));
+			garden.events = garden.events.filter((e) => !ids.includes(e.seed));
+			return [];
+		});
+		await commands.deleteSeeds(['s1']);
+		expect(ui.seeds.seedId).toBeNull();
+		expect(ui.overlays).toEqual([]);
+		expect(ui.seeds.selected).toEqual(['s2']);
+		expect(ui.garden.brush).toBeNull();
+		expect(ui.garden.selEv).toBeNull();
+		expect(garden.events.some((event) => event.seed === 's1')).toBe(false);
+		ui.seeds.state = 'all';
+		await commands.openSeed('s2');
+		expect(ui.seeds.state).toBe('all');
+		expect(ui.seeds.seedId).toBe('s2');
 	});
 
 	it('focuses the open detail close button after wide seed navigation', async () => {
@@ -69,8 +134,11 @@ describe('commands', () => {
 		vi.stubGlobal('document', { querySelector: vi.fn(() => ({ focus })) });
 		await commands.openSeed('s2');
 		expect(focus).toHaveBeenCalledOnce();
-		expect((document.querySelector as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('[data-detail-close]');
-		vi.restoreAllMocks(); vi.unstubAllGlobals();
+		expect(document.querySelector as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
+			'[data-detail-close]'
+		);
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 	});
 
 	it('does not plan a seed unless it is active', async () => {

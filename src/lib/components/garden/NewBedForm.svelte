@@ -16,6 +16,7 @@
 	let lInvalid = $state(false);
 	let wEl: HTMLInputElement | undefined = $state();
 	let lEl: HTMLInputElement | undefined = $state();
+	let saving = $state(false);
 
 	/** A whole number from 1 to 20, or null. */
 	function parseDim(raw: string): number | null {
@@ -35,8 +36,9 @@
 		toggleEl?.focus();
 	}
 
-	function add(event: SubmitEvent): void {
+	async function add(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
+		if (saving) return;
 		const width = parseDim(w);
 		const length = parseDim(l);
 		wInvalid = width === null;
@@ -48,14 +50,23 @@
 			(wInvalid ? wEl : lEl)?.focus();
 			return;
 		}
-		const bed = garden.addBed({ name: name.trim(), w: width, l: length });
-		ui.garden.bedId = bed.id;
-		ui.garden.selEv = null;
-		ui.showToast(`Added ${bed.name}.`);
-		name = '';
-		w = '4';
-		l = '8';
-		void close();
+		saving = true;
+		error = '';
+		try {
+			const bed = await garden.addBed({ name: name.trim(), w: width, l: length });
+			// Only a saved bed is selected and announced; a failure keeps the form open.
+			ui.garden.bedId = bed.id;
+			ui.garden.selEv = null;
+			ui.showToast(`Added ${bed.name}.`);
+			name = '';
+			w = '4';
+			l = '8';
+			void close();
+		} catch (e) {
+			error = e instanceof Error && e.message ? e.message : 'Couldn’t add that bed. Try again.';
+		} finally {
+			saving = false;
+		}
 	}
 
 	function cancel(): void {
@@ -117,7 +128,7 @@
 				/>
 			</label>
 			<div class="actions">
-				<button type="submit" class="add">Add</button>
+				<button type="submit" class="add" disabled={saving}>{saving ? 'Adding…' : 'Add'}</button>
 				<button type="button" class="cancel" onclick={cancel}>Cancel</button>
 			</div>
 			{#if error}
@@ -215,5 +226,19 @@
 		margin: 0;
 		font-size: 12.5px;
 		color: var(--warn);
+	}
+
+	.add:disabled {
+		opacity: 0.6;
+		cursor: wait;
+	}
+
+	@media (max-width: 899px), (pointer: coarse) {
+		.toggle,
+		.field input,
+		.add,
+		.cancel {
+			min-height: 44px;
+		}
 	}
 </style>

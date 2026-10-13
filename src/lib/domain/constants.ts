@@ -64,4 +64,8 @@ export const CHANGELOG: ChangelogEntry[] = [
 ];
 
 /** Sample identity shown in the shell and Settings. Not a real account. */
-export const SAMPLE_USER = { name: 'Sam Rivera', email: 'sam.rivera@example.com', household: 'Rivera garden' };
+export const SAMPLE_USER = {
+	name: 'Sam Rivera',
+	email: 'sam.rivera@example.com',
+	household: 'Rivera garden'
+};

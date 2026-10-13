@@ -76,18 +76,58 @@
 		void tick().then(() => {
 			if (!active) return;
 			const requested = initialFocus ? panel?.querySelector<HTMLElement>(initialFocus) : null;
-			(requested && focusable().includes(requested) ? requested : focusable()[0] ?? panel)?.focus();
+			(requested && focusable().includes(requested)
+				? requested
+				: (focusable()[0] ?? panel)
+			)?.focus();
 		});
-		const focusable = (): HTMLElement[] => panel ? Array.from(panel.querySelectorAll<HTMLElement>(
-			'a[href], button, input, select, textarea, [tabindex]'
-		)).filter((el) => !el.hidden && !(el instanceof HTMLInputElement && el.type === 'hidden') && !(el as HTMLButtonElement).disabled && el.getAttribute('tabindex') !== '-1' && !el.closest('[inert]') && el.getClientRects().length > 0) : [];
+		const focusable = (): HTMLElement[] =>
+			panel
+				? Array.from(
+						panel.querySelectorAll<HTMLElement>(
+							'a[href], button, input, select, textarea, [tabindex]'
+						)
+					).filter(
+						(el) =>
+							!el.hidden &&
+							!(el instanceof HTMLInputElement && el.type === 'hidden') &&
+							!(el as HTMLButtonElement).disabled &&
+							el.getAttribute('tabindex') !== '-1' &&
+							!el.closest('[inert]') &&
+							el.getClientRects().length > 0
+					)
+				: [];
 		const onKeydown = (event: KeyboardEvent): void => {
-			if (!modal || event.key !== 'Tab' || !entry || [...dialogLayers].reverse().find((item) => item.modal) !== entry) return;
+			if (
+				!modal ||
+				event.key !== 'Tab' ||
+				!entry ||
+				[...dialogLayers].reverse().find((item) => item.modal) !== entry
+			)
+				return;
 			const items = focusable();
-			if (!items.length) { event.preventDefault(); panel?.focus(); return; }
-			const first = items[0]; const last = items[items.length - 1];
-			if (event.shiftKey && (document.activeElement === panel || document.activeElement === first || !panel?.contains(document.activeElement))) { event.preventDefault(); last.focus(); }
-			else if (!event.shiftKey && (document.activeElement === last || !panel?.contains(document.activeElement))) { event.preventDefault(); first.focus(); }
+			if (!items.length) {
+				event.preventDefault();
+				panel?.focus();
+				return;
+			}
+			const first = items[0];
+			const last = items[items.length - 1];
+			if (
+				event.shiftKey &&
+				(document.activeElement === panel ||
+					document.activeElement === first ||
+					!panel?.contains(document.activeElement))
+			) {
+				event.preventDefault();
+				last.focus();
+			} else if (
+				!event.shiftKey &&
+				(document.activeElement === last || !panel?.contains(document.activeElement))
+			) {
+				event.preventDefault();
+				first.focus();
+			}
 		};
 		document.addEventListener('keydown', onKeydown);
 		void tick().then(() => {
@@ -99,7 +139,11 @@
 		return () => {
 			active = false;
 			document.removeEventListener('keydown', onKeydown);
-			if (entry) { const index = dialogLayers.indexOf(entry); if (index >= 0) dialogLayers.splice(index, 1); syncLayers(); }
+			if (entry) {
+				const index = dialogLayers.indexOf(entry);
+				if (index >= 0) dialogLayers.splice(index, 1);
+				syncLayers();
+			}
 			const preferred = returnFocus?.();
 			const target = preferred?.isConnected ? preferred : priorFocus;
 			if (target?.isConnected) target.focus();
@@ -110,24 +154,93 @@
 {#if open}
 	<div class="layer {variant}" bind:this={layer} use:portal>
 		{#if variant !== 'drawer'}
-			<div class="backdrop" aria-hidden="true" onclick={(event) => { if (event.target === event.currentTarget) onclose(); }}></div>
+			<div
+				class="backdrop"
+				aria-hidden="true"
+				onclick={(event) => {
+					if (event.target === event.currentTarget) onclose();
+				}}
+			></div>
 		{/if}
-		<div class="panel" bind:this={panel} role="dialog" aria-modal={variant === 'drawer' ? undefined : 'true'} aria-label={label} aria-labelledby={labelledby} tabindex="-1" style:--panel-width={width ?? '640px'}>
+		<div
+			class="panel"
+			bind:this={panel}
+			role="dialog"
+			aria-modal={variant === 'drawer' ? undefined : 'true'}
+			aria-label={label}
+			aria-labelledby={labelledby}
+			tabindex="-1"
+			style:--panel-width={width ?? '640px'}
+		>
 			{@render children()}
 		</div>
 	</div>
 {/if}
 
 <style>
-	.layer { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-	.backdrop { position: absolute; inset: 0; background: rgba(10, 14, 12, .45); pointer-events: auto; }
-	.palette .backdrop { background: rgba(10, 14, 12, .35); }
-	.panel { position: relative; z-index: 1; pointer-events: auto; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 24px 60px rgba(0,0,0,.25); width: min(var(--panel-width), calc(100vw - 32px)); max-height: min(90dvh, 900px); overflow: auto; }
-	.palette { align-items: flex-start; padding-top: min(15vh, 120px); }
-	.palette .panel { width: min(var(--panel-width), calc(100vw - 32px)); max-height: calc(100dvh - min(15vh, 120px) - 16px); }
-	.sheet { align-items: stretch; justify-content: flex-end; }
-	.sheet .panel { width: min(var(--panel-width), 100vw); max-height: 100dvh; height: 100dvh; border-radius: 12px 0 0 12px; }
-	.drawer { justify-content: flex-end; }
-	.drawer .panel { width: min(var(--panel-width), 100vw); max-height: 100dvh; height: 100dvh; border-radius: 12px 0 0 12px; }
-	@media (max-width: 600px) { .modal .panel, .palette .panel { width: calc(100vw - 16px); max-height: calc(100dvh - min(15vh, 120px) - 16px); } }
+	.layer {
+		position: fixed;
+		inset: 0;
+		z-index: 1000;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		pointer-events: none;
+	}
+	.backdrop {
+		position: absolute;
+		inset: 0;
+		background: rgba(10, 14, 12, 0.45);
+		pointer-events: auto;
+	}
+	.palette .backdrop {
+		background: rgba(10, 14, 12, 0.35);
+	}
+	.panel {
+		position: relative;
+		z-index: 1;
+		pointer-events: auto;
+		background: var(--panel);
+		color: var(--ink);
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+		width: min(var(--panel-width), calc(100vw - 32px));
+		max-height: min(90dvh, 900px);
+		overflow: auto;
+	}
+	.palette {
+		align-items: flex-start;
+		padding-top: min(15vh, 120px);
+	}
+	.palette .panel {
+		width: min(var(--panel-width), calc(100vw - 32px));
+		max-height: calc(100dvh - min(15vh, 120px) - 16px);
+	}
+	.sheet {
+		align-items: stretch;
+		justify-content: flex-end;
+	}
+	.sheet .panel {
+		width: min(var(--panel-width), 100vw);
+		max-height: 100dvh;
+		height: 100dvh;
+		border-radius: 12px 0 0 12px;
+	}
+	.drawer {
+		justify-content: flex-end;
+	}
+	.drawer .panel {
+		width: min(var(--panel-width), 100vw);
+		max-height: 100dvh;
+		height: 100dvh;
+		border-radius: 12px 0 0 12px;
+	}
+	@media (max-width: 600px) {
+		.modal .panel,
+		.palette .panel {
+			width: calc(100vw - 16px);
+			max-height: calc(100dvh - min(15vh, 120px) - 16px);
+		}
+	}
 </style>

@@ -7,9 +7,9 @@
 <section class="panel" aria-labelledby="latest-note-title">
 	<div class="panel-head">
 		<h2 id="latest-note-title">Latest note</h2>
-		<span class="mono muted date">{fmt(garden.note.date)}</span>
+		<span class="mono muted date">{garden.note ? fmt(garden.note.date) : ''}</span>
 	</div>
-	<p class="body">{garden.note.body}</p>
+	<p class="body">{garden.note?.body?.trim() || 'No journal notes yet.'}</p>
 </section>
 
 <style>

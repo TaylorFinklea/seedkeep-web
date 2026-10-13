@@ -13,12 +13,17 @@
 	let previousCell: { row: number; col: number } | null = null;
 	$effect(() => {
 		const selected = garden.events.find((event) => event.id === ui.garden.selEv);
-		const bed = selected ? garden.beds.find((item) => item.id === selected.bed) ?? garden.beds[0] : null;
+		const bed = selected
+			? (garden.beds.find((item) => item.id === selected.bed) ?? garden.beds[0])
+			: null;
 		const cell = selected && bed ? cellIndex(bed, selected) : null;
 		if (cell) previousCell = cell;
 		if (!ui.garden.selEv && previousCell && document.activeElement === document.body) {
-			const target = previousCell; previousCell = null;
-			void tick().then(() => document.querySelector<HTMLElement>(`[data-cell="${target.row}-${target.col}"]`)?.focus());
+			const target = previousCell;
+			previousCell = null;
+			void tick().then(() =>
+				document.querySelector<HTMLElement>(`[data-cell="${target.row}-${target.col}"]`)?.focus()
+			);
 		}
 	});
 	$effect(() => {
@@ -34,6 +39,18 @@
 <BedEvents />
 
 <style>
-	.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
-	.workbench { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; min-width: 0; }
+	.toolbar {
+		display: flex;
+		gap: 10px;
+		flex-wrap: wrap;
+		align-items: center;
+		margin-bottom: 14px;
+	}
+	.workbench {
+		display: flex;
+		gap: 14px;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		min-width: 0;
+	}
 </style>

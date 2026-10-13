@@ -16,7 +16,9 @@ describe('sampleReply', () => {
 	});
 	it('selects the bed with most empty squares and reports its count', () => {
 		const result = sampleReply(sampleData(), 'which bed has room?');
-		expect(result.text).toContain('South raised bed has the most open space, with 28 empty squares.');
+		expect(result.text).toContain(
+			'South raised bed has the most open space, with 28 empty squares.'
+		);
 	});
 	it('lists active now and closing soon seeds with window labels by default', () => {
 		const result = sampleReply(sampleData(), 'what should I plant?');

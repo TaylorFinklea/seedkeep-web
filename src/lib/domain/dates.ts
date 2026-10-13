@@ -1,10 +1,25 @@
 // Date-only helpers. All math is UTC on `YYYY-MM-DD` strings.
 import type { DateParts, YMD } from './types';
+import { clock } from '$lib/state/clock.svelte';
 
-export const TODAY: YMD = '2026-10-09';
+export const today = (): YMD => clock.today;
+export const setToday = (ymd: YMD): void => clock.setToday(ymd);
 const DAY = 86_400_000;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS_LONG = [
+	'January',
+	'February',
+	'March',
+	'April',
+	'May',
+	'June',
+	'July',
+	'August',
+	'September',
+	'October',
+	'November',
+	'December'
+];
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export function parseYMD(s: YMD): number {
@@ -17,7 +32,7 @@ export function toYMD(ms: number): YMD {
 }
 
 export function diff(s: YMD): number {
-	return Math.round((parseYMD(s) - parseYMD(TODAY)) / DAY);
+	return Math.round((parseYMD(s) - parseYMD(today())) / DAY);
 }
 
 export function fmt(s: YMD | null | undefined): string {
@@ -34,9 +49,8 @@ export function plural(n: number, word: string): string {
 	return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
-
 export function dateParts(): DateParts {
-	const date = new Date(parseYMD(TODAY));
+	const date = new Date(parseYMD(today()));
 	const dow = DAYS[date.getUTCDay()];
 	const month = MONTHS_LONG[date.getUTCMonth()];
 	const day = date.getUTCDate();

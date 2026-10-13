@@ -11,6 +11,7 @@ import { tick } from 'svelte';
 import { garden } from './garden.svelte';
 import { ui } from './ui.svelte';
 import type { AddMode } from './ui.svelte';
+import { FEATURES } from '$lib/config';
 
 export const commands = {
 	/** Navigate to a route (goto) and resolve after the DOM settles (tick). */
@@ -31,18 +32,25 @@ export const commands = {
 
 	/** Open the palette; if it is open, close it. Ignored while another modal is open. */
 	togglePalette: (): void => {
-		if (ui.isOpen('palette')) { ui.close('palette'); return; }
+		if (ui.isOpen('palette')) {
+			ui.close('palette');
+			return;
+		}
 		if (ui.modalOpen) return;
 		ui.open('palette');
 	},
 
 	/** Open Add seed in a mode (default 'manual'). */
 	openAdd: (mode?: AddMode): void => {
+		if ((mode === 'photo' && !FEATURES.packetPhoto) || (mode === 'scan' && !FEATURES.barcodeScan))
+			mode = 'manual';
 		ui.addMode = mode ?? 'manual';
 		ui.open('add');
 	},
 
-	toggleSprout: (): void => ui.toggle('sprout'),
+	toggleSprout: (): void => {
+		if (FEATURES.sprout) ui.toggle('sprout');
+	},
 
 	openShortcuts: (): void => ui.open('shortcuts'),
 
@@ -58,7 +66,10 @@ export const commands = {
 		}
 		if (ui.closeTop()) return;
 		const key = routeKey(page.url.pathname);
-		if (key === 'seeds') { ui.seeds.seedId = null; return; }
+		if (key === 'seeds') {
+			ui.seeds.seedId = null;
+			return;
+		}
 		if (key === 'garden') {
 			if (ui.garden.brush) ui.garden.brush = null;
 			else ui.garden.selEv = null;
@@ -69,26 +80,43 @@ export const commands = {
 
 	/** Pick a .csv file, import it into the store, toast the result and any ignored columns. */
 	importCSV: (): void => {
+		if (!FEATURES.csvImport) return;
 		const input = document.createElement('input');
-		input.type = 'file'; input.accept = '.csv,text/csv'; input.hidden = true;
+		input.type = 'file';
+		input.accept = '.csv,text/csv';
+		input.hidden = true;
 		input.addEventListener('cancel', () => input.remove(), { once: true });
 		input.addEventListener('change', () => {
-			const file = input.files?.[0]; input.remove();
+			const file = input.files?.[0];
+			input.remove();
 			if (!file) return;
-			void file.text().then((text) => {
-				const result = garden.importCSV(text);
-				if (!result.added) ui.showToast('No rows found in that file.');
-				else ui.showToast(`Imported ${plural(result.added, 'seed')}.${result.ignored.length ? ` Not imported: ${result.ignored.join(', ')}.` : ''}`);
-			}).catch(() => ui.showToast('Couldn’t read that file.'));
+			void file
+				.text()
+				.then((text) => {
+					const result = garden.importCSV(text);
+					if (!result.added) ui.showToast('No rows found in that file.');
+					else
+						ui.showToast(
+							`Imported ${plural(result.added, 'seed')}.${result.ignored.length ? ` Not imported: ${result.ignored.join(', ')}.` : ''}`
+						);
+				})
+				.catch(() => ui.showToast('Couldn’t read that file.'));
 		});
-		document.body.append(input); input.click();
+		document.body.append(input);
+		input.click();
 	},
 
 	/** Download seedkeep-library.csv and toast the count. */
 	exportCSV: (): void => {
-		const url = URL.createObjectURL(new Blob([garden.exportCSV()], { type: 'text/csv;charset=utf-8' }));
-		const link = document.createElement('a'); link.href = url; link.download = 'seedkeep-library.csv';
-		document.body.append(link); link.click(); link.remove();
+		const url = URL.createObjectURL(
+			new Blob([garden.exportCSV()], { type: 'text/csv;charset=utf-8' })
+		);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = 'seedkeep-library.csv';
+		document.body.append(link);
+		link.click();
+		link.remove();
 		setTimeout(() => URL.revokeObjectURL(url), 500);
 		ui.showToast(`Exported ${plural(garden.seeds.length, 'seed')} as CSV.`);
 	},
@@ -97,19 +125,29 @@ export const commands = {
 	printInventory: (): void => window.print(),
 
 	/** Delete seeds and clear any selection, open detail, brush or selected event that pointed at them. */
-	deleteSeeds: (ids: string[]): void => {
+	deleteSeeds: async (ids: string[]): Promise<void> => {
 		const removed = new Set(ids);
-		const eventIds = garden.events.filter((event) => removed.has(event.seed)).map((event) => event.id);
-		garden.removeSeeds(ids);
+		const eventIds = garden.events
+			.filter((event) => removed.has(event.seed))
+			.map((event) => event.id);
+		const request = garden.removeSeeds(ids);
 		ui.seeds.selected = ui.seeds.selected.filter((id) => !removed.has(id));
-		if (ui.seeds.seedId && removed.has(ui.seeds.seedId)) { ui.seeds.seedId = null; ui.close('detail'); }
+		if (ui.seeds.seedId && removed.has(ui.seeds.seedId)) {
+			ui.seeds.seedId = null;
+			ui.close('detail');
+		}
 		if (ui.garden.brush && removed.has(ui.garden.brush)) ui.garden.brush = null;
 		if (ui.garden.selEv && eventIds.includes(ui.garden.selEv)) ui.garden.selEv = null;
+		await request.catch(() => undefined);
 	},
 
 	/** Remove one planting event and clear the selected event if it was this one. */
-	removeEvent: (id: string): void => {
-		garden.removeEvent(id);
+	removeEvent: async (id: string): Promise<void> => {
+		try {
+			await garden.removeEvent(id);
+		} catch {
+			return;
+		}
 		if (ui.garden.selEv === id) ui.garden.selEv = null;
 	},
 
@@ -118,23 +156,43 @@ export const commands = {
 		const seed = garden.seeds.find((candidate) => candidate.id === id);
 		if (!seed) return;
 		if (ui.seeds.state !== 'all') ui.seeds.state = seed.state;
-		if (ui.seeds.q && ![seed.name, seed.variety, seed.company, seed.type, seed.notes].join(' ').toLowerCase().includes(ui.seeds.q.trim().toLowerCase())) ui.seeds.q = '';
+		if (
+			ui.seeds.q &&
+			![seed.name, seed.variety, seed.company, seed.type, seed.notes]
+				.join(' ')
+				.toLowerCase()
+				.includes(ui.seeds.q.trim().toLowerCase())
+		)
+			ui.seeds.q = '';
 		if (ui.seeds.type && seed.type.trim() !== ui.seeds.type.trim()) ui.seeds.type = '';
 		ui.seeds.seedId = id;
 		await commands.go('seeds');
 		if (!ui.wide) ui.open('detail');
-		else if (typeof document !== 'undefined') document.querySelector<HTMLElement>('[data-detail-close]')?.focus();
+		else if (typeof document !== 'undefined')
+			document.querySelector<HTMLElement>('[data-detail-close]')?.focus();
 	},
 
 	/** Mark an event done/undone and show a toast with Undo (Phase 4 uses this on Today). */
-	completeEvent: (id: string): void => {
+	completeEvent: async (id: string): Promise<void> => {
 		const event = garden.events.find((candidate) => candidate.id === id);
 		if (!event) return;
-		garden.toggleDone(id);
-		if (!garden.events.find((candidate) => candidate.id === id)?.done) { ui.dismissToast(); return; }
+		try {
+			await garden.toggleDone(id);
+		} catch {
+			return;
+		}
+		if (!garden.events.find((candidate) => candidate.id === id)?.done) {
+			ui.dismissToast();
+			return;
+		}
 		const seed = garden.seeds.find((candidate) => candidate.id === event.seed);
 		const kind = KIND[event.kind].toLowerCase();
-		ui.showToast(`Marked ${kind} ${seed ? seedTitle(seed) : 'Unknown seed'} done.`, { label: 'Undo', run: () => garden.updateEvent(id, { done: false }) });
+		ui.showToast(`Marked ${kind} ${seed ? seedTitle(seed) : 'Unknown seed'} done.`, {
+			label: 'Undo',
+			run: () => {
+				void garden.updateEvent(id, { done: false }).catch(() => undefined);
+			}
+		});
 	},
 
 	/** Start painting a seed in Garden: set the brush, clear the selected event, navigate, toast the hint. (Phase 4 callers.) */
@@ -145,8 +203,24 @@ export const commands = {
 			ui.showToast(`Move ${seedTitle(seed)} to Active to plan it in a bed.`);
 			return;
 		}
-		ui.garden.brush = seedId; ui.garden.selEv = null;
+		ui.garden.brush = seedId;
+		ui.garden.selEv = null;
 		await commands.go('garden');
 		ui.showToast(`Click empty squares to plan ${seedTitle(seed)}.`);
 	}
 };
+
+/** Clear household-private view state when the signed-in garden changes. */
+export function resetSessionUI(): void {
+	ui.seeds = {
+		state: 'active',
+		q: '',
+		type: '',
+		sort: { key: 'name', dir: 1 },
+		selected: [],
+		seedId: null
+	};
+	ui.garden = { bedId: '', brush: null, selEv: null };
+	ui.overlays = [];
+	ui.dismissToast();
+}

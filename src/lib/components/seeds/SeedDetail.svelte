@@ -5,9 +5,97 @@
 <script lang="ts">
 	import { garden } from '$lib/state/garden.svelte';
 	import { byId, eventRow, seedRow } from '$lib/domain/derive';
+	import { FEATURES } from '$lib/config';
+	import { ApiError } from '$lib/api';
+	import type { SeedPhoto } from '$lib/domain/types';
 	import CorrectionForm from './CorrectionForm.svelte';
 
 	let { seedId, onclose }: { seedId: string; onclose: () => void } = $props();
+
+	const ROLES: { value: SeedPhoto['role']; label: string }[] = [
+		{ value: 'front', label: 'Front' },
+		{ value: 'back', label: 'Back' },
+		{ value: 'extra', label: 'Extra' }
+	];
+
+	let photos = $state<SeedPhoto[]>([]);
+	let urls = $state<Record<string, string>>({});
+	let photoError = $state('');
+	let photoBusy = $state(false);
+	let uploadRole = $state<SeedPhoto['role']>('front');
+	let confirmDeleteId = $state<string | null>(null);
+	let fileInput: HTMLInputElement | undefined = $state();
+
+	function messageOf(e: unknown, fallback: string): string {
+		if (e instanceof ApiError && e.message) return e.message;
+		if (e instanceof Error && e.message) return e.message;
+		return fallback;
+	}
+
+	/** Reload the photo list and its blob URLs for one seed. Stale loads are dropped. */
+	async function loadPhotos(id: string, isCurrent: () => boolean): Promise<void> {
+		try {
+			const list = await garden.seedPhotos(id);
+			if (!isCurrent()) return;
+			photos = list;
+			const next: Record<string, string> = {};
+			for (const photo of list) {
+				const url = await garden.photoBlobUrl(photo.id);
+				if (!isCurrent()) return;
+				if (url) next[photo.id] = url;
+			}
+			urls = next;
+			photoError = '';
+		} catch (e) {
+			if (isCurrent()) photoError = messageOf(e, 'Couldn’t load photos.');
+		}
+	}
+
+	$effect(() => {
+		const id = seedId;
+		let current = true;
+		photos = [];
+		urls = {};
+		photoError = '';
+		confirmDeleteId = null;
+		void loadPhotos(id, () => current && id === seedId);
+		return () => {
+			current = false;
+		};
+	});
+
+	async function uploadPhoto(event: Event): Promise<void> {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file) return;
+		const id = seedId;
+		photoBusy = true;
+		photoError = '';
+		try {
+			await garden.uploadSeedPhoto(id, file, uploadRole);
+			if (id === seedId) await loadPhotos(id, () => id === seedId);
+		} catch (e) {
+			photoError = messageOf(e, 'Couldn’t upload that photo. Try again.');
+		} finally {
+			photoBusy = false;
+		}
+	}
+
+	async function deletePhoto(photoId: string): Promise<void> {
+		const id = seedId;
+		photoBusy = true;
+		photoError = '';
+		try {
+			await garden.deleteSeedPhoto(photoId);
+			confirmDeleteId = null;
+			if (id === seedId) await loadPhotos(id, () => id === seedId);
+		} catch (e) {
+			photoError = messageOf(e, 'Couldn’t delete that photo. Try again.');
+		} finally {
+			photoBusy = false;
+		}
+	}
 
 	const seed = $derived(byId(garden.seeds, seedId));
 	const row = $derived(seed ? seedRow(garden, seed) : null);
@@ -21,7 +109,9 @@
 	function toggleTag(tagId: string): void {
 		if (!seed) return;
 		const on = seed.tags.includes(tagId);
-		garden.updateSeed(seedId, { tags: on ? seed.tags.filter((t) => t !== tagId) : [...seed.tags, tagId] });
+		garden.updateSeed(seedId, {
+			tags: on ? seed.tags.filter((t) => t !== tagId) : [...seed.tags, tagId]
+		});
 	}
 </script>
 
@@ -33,7 +123,13 @@
 				<div class="title">{row.title}</div>
 				<div class="provenance">{row.provenance}</div>
 			</div>
-			<button type="button" class="close" aria-label="Close seed details" data-detail-close onclick={onclose}>×</button>
+			<button
+				type="button"
+				class="close"
+				aria-label="Close seed details"
+				data-detail-close
+				onclick={onclose}>×</button
+			>
 		</header>
 
 		<div class="body">
@@ -54,7 +150,90 @@
 				{#if row.windowLabel}
 					<div class="mono window">{row.windowLabel}</div>
 				{/if}
-				<div class="muted small zip">ZIP {garden.home.zip} · Zone {garden.home.zone}</div>
+				<div class="muted small zip">
+					{#if garden.home.hasLocation}
+						ZIP {garden.home.zip} · Zone {garden.home.zone}
+					{:else}
+						<a href="/settings">Set your home ZIP in Settings</a>
+					{/if}
+				</div>
+			</section>
+
+			<section aria-labelledby="photos-title">
+				<h3 class="section-title" id="photos-title">Photos</h3>
+				{#if photos.length}
+					<ul class="photos">
+						{#each photos as photo (photo.id)}
+							<li class="photo">
+								{#if urls[photo.id]}
+									<img class="thumb" src={urls[photo.id]} alt="{photo.role} photo of {row.title}" />
+								{:else}
+									<span class="thumb placeholder" aria-hidden="true">{photo.role}</span>
+								{/if}
+								<div class="photo-meta">
+									<span class="muted small">{photo.role}</span>
+									{#if confirmDeleteId === photo.id}
+										<span class="confirm">
+											<span class="small">Delete this photo?</span>
+											<button
+												type="button"
+												class="text-danger"
+												disabled={photoBusy}
+												onclick={() => deletePhoto(photo.id)}>Delete</button
+											>
+											<button
+												type="button"
+												class="text-btn"
+												onclick={() => (confirmDeleteId = null)}>Cancel</button
+											>
+										</span>
+									{:else}
+										<button
+											type="button"
+											class="text-btn"
+											disabled={photoBusy}
+											aria-label="Delete {photo.role} photo of {row.title}"
+											onclick={() => (confirmDeleteId = photo.id)}>Delete</button
+										>
+									{/if}
+								</div>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p class="muted">No photos yet.</p>
+				{/if}
+
+				<div class="upload">
+					<label class="upload-label" for="photo-upload">Add a photo</label>
+					<p class="muted small upload-hint">JPG, PNG or HEIC.</p>
+					<div class="upload-row">
+						<label class="role-label">
+							<span class="small muted">Role</span>
+							<select bind:value={uploadRole} disabled={photoBusy}>
+								{#each ROLES as role (role.value)}
+									<option value={role.value}>{role.label}</option>
+								{/each}
+							</select>
+						</label>
+						<input
+							id="photo-upload"
+							class="file"
+							type="file"
+							accept="image/jpeg,image/png,image/heic"
+							bind:this={fileInput}
+							disabled={photoBusy}
+							onchange={uploadPhoto}
+						/>
+					</div>
+					{#if photoBusy}
+						<p class="muted small" role="status">Working…</p>
+					{/if}
+				</div>
+
+				{#if photoError}
+					<p class="photo-error" role="alert">{photoError}</p>
+				{/if}
 			</section>
 
 			<section>
@@ -115,11 +294,13 @@
 				{/each}
 			</section>
 
-			<section>
-				{#key seedId}
-					<CorrectionForm {seedId} />
-				{/key}
-			</section>
+			{#if FEATURES.catalogCorrections}
+				<section>
+					{#key seedId}
+						<CorrectionForm {seedId} />
+					{/key}
+				</section>
+			{/if}
 		</div>
 	</div>
 {/if}
@@ -311,5 +492,145 @@
 
 	p {
 		margin: 0;
+	}
+
+	.photos {
+		list-style: none;
+		margin: 0 0 10px;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+		gap: 10px;
+	}
+
+	.photo {
+		display: grid;
+		gap: 4px;
+		min-width: 0;
+	}
+
+	.thumb {
+		width: 100%;
+		aspect-ratio: 1;
+		object-fit: cover;
+		border-radius: 8px;
+		border: 1px solid var(--line);
+		background: var(--panel2);
+		display: grid;
+		place-items: center;
+	}
+
+	.placeholder {
+		font-size: 12px;
+		color: var(--faint);
+		text-transform: capitalize;
+	}
+
+	.photo-meta {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 6px;
+		flex-wrap: wrap;
+	}
+
+	.confirm {
+		display: flex;
+		gap: 6px;
+		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	.text-btn,
+	.text-danger {
+		background: none;
+		border: none;
+		padding: 2px 4px;
+		font: inherit;
+		font-size: 12.5px;
+		cursor: pointer;
+		color: var(--accent);
+		text-decoration: underline;
+	}
+
+	.text-danger {
+		color: var(--warn);
+	}
+
+	.text-btn:disabled,
+	.text-danger:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+
+	.upload {
+		display: grid;
+		gap: 6px;
+		margin-top: 6px;
+	}
+
+	.upload-label {
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--muted);
+	}
+
+	.upload-hint {
+		margin: 0;
+	}
+
+	.upload-row {
+		display: flex;
+		gap: 10px;
+		flex-wrap: wrap;
+		align-items: flex-end;
+	}
+
+	.role-label {
+		display: grid;
+		gap: 2px;
+	}
+
+	.role-label select {
+		border: 1px solid var(--line2);
+		border-radius: 6px;
+		padding: 4px 8px;
+		background: var(--panel);
+		color: var(--ink);
+		font: inherit;
+		font-size: 13px;
+	}
+
+	.file {
+		font-size: 13px;
+		max-width: 100%;
+	}
+
+	.photo-error {
+		margin: 8px 0 0;
+		font-size: 12.5px;
+		color: var(--warn);
+	}
+
+	a {
+		color: var(--accent);
+	}
+
+	button:focus-visible,
+	select:focus-visible,
+	input:focus-visible,
+	a:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+
+	@media (max-width: 899px), (pointer: coarse) {
+		.text-btn,
+		.text-danger,
+		.role-label select,
+		.file,
+		.tag {
+			min-height: 44px;
+		}
 	}
 </style>

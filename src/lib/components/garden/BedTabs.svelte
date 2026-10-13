@@ -11,7 +11,12 @@
 
 <div class="tabs" role="group" aria-label="Beds">
 	{#each garden.beds as bed (bed.id)}
-		<button type="button" class="tab" aria-pressed={ui.garden.bedId === bed.id} onclick={() => pick(bed.id)}>
+		<button
+			type="button"
+			class="tab"
+			aria-pressed={ui.garden.bedId === bed.id}
+			onclick={() => pick(bed.id)}
+		>
 			<span>{bed.name}</span>
 			<span class="dims">{bed.w}×{bed.l}</span>
 		</button>
